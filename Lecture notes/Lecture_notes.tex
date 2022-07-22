@@ -107,6 +107,7 @@ Two types of separation can be performed on a given mathematical programming mod
 
 Let us consider our 2SSP in the following form:
 
+\begin{center}
 \begin{tabular}{rccccc}
 	$\mini$ & $c^\top x$ & + $p_1 q_1^\top y_1$ & $\dots$ & + $p_{|S|} q_{|S|}^\top y_{|S|}$ &     \\
 	$\st$   & $Ax$       &                      &         &   	                           & = $b$ \\
@@ -114,6 +115,7 @@ Let us consider our 2SSP in the following form:
 	        &		    &	                      & $\ddots$&                                  &    \\   
 	        & $T_{|S|}x$ &                      &         & + $W_{|S|}y_{|S|}$              & = $h_{|S|}$. \\
 \end{tabular}
+\end{center}
 
 Notice that if the value of $x$ is set, the problem can be solved as a collection of $|S|$ problems that are \emph{independent} of each other. This is why we say that $x$ is a \emph{complicating variable}.
 
@@ -531,9 +533,9 @@ One point to remark is that, if the evaluation of the Lagrangian dual function r
 \pagebreak
 \part{Progressive hedging}
 
-Progressive hedging (PH) is a method also based on Lagrangian decomposition. However, it relies on additional features to allow for complete separation while recovering the differentiability of the Lagrangian dual function.
+Progressive hedging (PH) \citep{ROCKAFELLAR1991} is a method also based on Lagrangian decomposition. However, it relies on additional features to allow for complete separation while recovering the differentiability of the Lagrangian dual function.
 
-PH can be seen as a special case of a more general algorithm known as the alternating direction method of multipliers (ADMM) which has as most important feature allowing for the solution of problem in a decoupled (or decomposed) form.
+PH can be seen as a special case of a more general algorithm known as the alternating direction method of multipliers (ADMM) \citep{BOYD2011}, which has the important feature of allowing for the solution of problems in a decoupled (or decomposed) form.
 
 
 \section{A formulation for PH}
@@ -548,7 +550,7 @@ PH requires a specific reformulation of our 2SSP. Again, let us consider the pro
 	& y_s \in Y_s, \ \forall s \in S.
 \end{align*}
 %
-To enforce nonanticipativity, we will augment the problem instead with a variable $z$, leading to an equivalent reformulation
+To enforce nonanticipativity, we will augment the problem with a variable $z$, leading to an equivalent reformulation
 %
 \begin{align*}
 	\mini &\sum_s p_s \left(c^\top x_s + q_s ^\top y_s\right) \\ 
@@ -565,7 +567,7 @@ Notice that, once again, we expose a complicating constraint structure, though w
 
 \subsection{A Lagrangian dual perspective}
 
-ADMM utilises augmented Lagrangian duality combined with a coordinate-descent strategy to obtain separability. In what follows, we will see how these can be employed to solve our 2SSP. 
+ADMM utilises Lagrangian duality combined with a coordinate-descent strategy to obtain separability. In what follows, we will see how these can be employed to solve our 2SSP. 
 
 For that, let us focus first on the relaxation of the NAC via a Lagrangian decomposition framework. Relaxing the NAC leads to the following Lagrangian dual function.
 %
@@ -584,10 +586,10 @@ By making $\lambda_s = \frac{\mu_s}{p_s}$, we can rewrite the Lagrangian dual fu
 	\st & Ax_s = b, \ \forall s \in S \\
 	& T_sx + W_sy_s = h_s, \ \forall s \in S \\
 	& x_s \in X, \ \forall s \in S \\
-	& y_s \in Y_s, \ \forall s \in S. \\
+	& y_s \in Y_s, \ \forall s \in S.
 \end{align*}
 %
-As is, the Lagrangian dual function is unbounded in $z$. We can remediate this by adding the dual feasibility condition
+As is, the Lagrangian dual function is unbounded in $z$. Notice that we purposely do not impose feasibility conditions of the first-stage variable $x$. We can remediate this by adding the dual feasibility condition
 %
 \begin{equation*}
 	\sum_s p_s \lambda_s = 0.
@@ -609,7 +611,7 @@ where
 	& y_s \in Y_s, \ \forall s \in S. 
 \end{align*}
 
-As we know, this function is still a piecewise linear (thus, nonsmooth) function on $\lambda$. Furthermore, we have seen before that any choice of $\lambda$ leads to a lower bound $z$, and our objective is to find the Lagrangian dual multiplier $\lambda$ that maximises the Lagrangian dual problem
+As we know, this function is still a piecewise linear (thus, nonsmooth) function on $\lambda$. Furthermore, we have seen before that any choice of $\lambda$ leads to a lower bound $z$ (weak duality), and our objective is to find the Lagrangian dual multiplier $\lambda$ that maximises the Lagrangian dual problem
 %
 \begin{equation*}
 	\max_\lambda \left\{ L(\lambda) : \sum_s p_s\lambda_s = 0 \right\}.
@@ -634,15 +636,15 @@ with
 	\st & Ax_s = b, \ \forall s \in S \\
 	& T_sx + W_sy_s = h_s, \ \forall s \in S \\
 	& x_s \in X, \ \forall s \in S \\
-	& y_s \in Y_s, \ \forall s \in S. 
+	& y_s \in Y_s, \ \forall s \in S 
 \end{align*}
 
-where $\rho > 0$ is a penalty coefficient. Notice, however, that the penalty term compromises the separability of the Lagrangian dual function once again, as it creates a new dependency on the variable $z$.
+where $\rho > 0$ is a penalty coefficient. Notice, however, that the penalty term compromises the separability of the Lagrangian dual function, as it creates a dependency on the variable $z$.
 
 
 \subsection{A coordinate descent/ alternating direction approach}
 
-One key observation concerning augmented Lagrangian functions $L^\rho(\lambda)$ is that once $z$ is fixed, the problem becomes separable. This can be exploited in a coordinated setting, in which the Lagrangian dual function is evaluated for each set of coordinates individually. Specifically, we can iterate the following steps until convergence:
+One key observation concerning augmented Lagrangian function $L^\rho(\lambda)$ is that once $z$ is fixed, its evaluation can be done separately scenario-wise. This can be exploited in a coordinated setting, in which the augmented Lagrangian dual function is evaluated for each set of coordinates individually. Specifically, we can iterate the following steps until convergence:
 %
 \begin{align*}
 	& x^{k+1} = \arg\min L^\rho(\lambda; z = z^k) \\
@@ -651,7 +653,7 @@ One key observation concerning augmented Lagrangian functions $L^\rho(\lambda)$ 
 %
 where the semi-colon notation showing $z = z^k$ indicates, that $z$ is set to $z^k$ when evaluating $L^\rho(\lambda)$. 
 
-Interestingly, the use of the penalty term $\frac{\rho}{2}||x_s - z||$ makes the augmented Lagrangian function strictly convex, which in turn yields the convergence guarantees for this strategy\footnote{This sort of coordinate-based method sits under the general framework of Gauss-Seidel methods, which are shown to converge under somewhat mild conditions (e.g., differentiability and convexity)}.
+Interestingly, the use of the penalty term $\frac{\rho}{2}||x_s - z||_2^2$ makes the augmented Lagrangian function strictly convex, which in turn yields the convergence guarantees for this strategy\footnote{This sort of coordinate-based method sits under the general framework of Gauss-Seidel methods, which are shown to converge under somewhat mild conditions (e.g., differentiability and convexity)}.
 
 
 
@@ -673,7 +675,15 @@ This strictly convex unconstrained problem takes its optimal $z^{k+1}$ where $\n
  	& \sum_s p_s x_s^{k+1} = z^{k+1}.
 \end{align*}
 %
-Finally, being PH (or ADMM, for that matter) a Lagrangian dual-based approach, we must still rely on dual ascent steps. It turns out that the penalty parameter $\rho$ yields a convenient step size as it can be shown to lead to a dual multiplier update that still retains the optimality conditions if the augmented Lagrangian function in the primal space of the variables. 
+This is precisely why the method is called ``progressive hedging''. One can see the method as successively solving the separate augmented Lagrangians (obtaining $x_s$), taking averages of the solutions ($z$) and using the divergences between each scenario and average to update the penalties imposed to each scenario. 
+
+This last part is done via the dual ascent steps, which for PH take the form of
+%
+\begin{equation*}
+	\lambda^{k+1} = \lambda^{k} + \rho (x_s - z)
+\end{equation*} 
+%
+Being PH (or ADMM, for that matter) a Lagrangian dual-based approach, we must still rely on dual ascent steps. It turns out that the penalty parameter $\rho$ yields a convenient step size as it can be shown to lead to a dual multiplier update that retains the optimality conditions of the augmented Lagrangian function in the primal space of the variables. 
 
 We are finally ready to present the method.
 
@@ -693,8 +703,8 @@ Some final remarks:
 	\begin{equation*}
 		\sum_s p_s \left[||x_s^k - z_k||_2^2 + ||z_k - z_{k-1}||_2^2\right]	= \sum_s p_s ||x_s^k - z_{k-1}||_2^2.
 	\end{equation*}
-	\item The penalty coefficient $\rho$ can be set at different values per component $s \in S$, and it can also be updated during the algorithm execution.
-	\item In the presence of integer variables, PH is a heuristic, as the alternating strategy loses its convergence guarantees. This can be tackled with a variant (Boland et al. 2018) of the method,  but it only makes it a bounding strategy due to the possible presence of duality gaps.
+	\item The penalty coefficient $\rho$ can be set at different values per component $s \in S$, and it can also be updated during the algorithm execution. In \citet{OLIVEIRA2020}, we explored some ideas in this direction. Ideas relating to setting good penalty parameters $\rho$ have initially been explored in \citet{WATSON2011}. 
+	\item In the presence of integer variables, PH is a heuristic, as the alternating strategy loses its convergence guarantees. This can be addressed with a variant of the method \citep{BOLAND2018, BOLAND2019}, but it only makes it a bounding strategy due to the possible presence of duality gaps. \citet{KIM2022} describe how PH can be incorporated within a branch-and-bound algorithm for addressing eventual duality gaps.
 \end{enumerate}
 
 \pagebreak
