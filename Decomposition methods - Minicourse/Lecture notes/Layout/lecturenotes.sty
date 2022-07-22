@@ -1,0 +1,76 @@
+\usepackage[marginparwidth=6cm, marginparsep=0.7cm]{geometry}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{graphicx}
+\usepackage{floatrow}
+\usepackage{lipsum}  
+\usepackage{amssymb}
+\usepackage{tikz}
+\usepackage{color}
+\usepackage{algorithm}
+\usepackage{algorithmicx}
+\usepackage{algpseudocode}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{setspace}
+
+\newgeometry{top=40mm, bottom=30mm, right=35mm, left=35mm}
+
+\setlength{\parindent}{0em}
+\setlength{\parskip}{0.5em}
+
+\floatsetup[widefigure]{margins=hangright,capposition=beside,
+capbesideposition={bottom, right},floatwidth=\textwidth}
+
+%Style \maketitle
+\usepackage{titlesec}
+\def\@seccntformat#1{\protect\makebox[0pt][r]{{\csname the#1\endcsname\quad}}}
+
+\makeatletter
+\renewcommand{\maketitle}{\bgroup\setlength{\parindent}{0pt}
+\begin{flushleft}
+  {\Huge\sffamily\bfseries\@title}
+  \vskip 2em
+  {\sffamily\@author}
+  \vskip 2pt
+  {Last update: \today}
+  \vskip 2.0em
+\end{flushleft}\egroup
+}
+
+\makeatother
+%Header and Footer Package
+\usepackage{fancyhdr}
+ 
+\pagestyle{fancy}
+\fancyhf{}
+%\fancyhead[L]{\bf\nouppercase\rightmark}
+\fancyhead[L]{\bf Lecture notes}
+\fancyhead[R]{\bf Short course: decomposition for SP and RO}
+\fancyfoot[R]{\thepage}
+
+%Style Abstract
+\renewenvironment{abstract}
+	{\par{\bfseries \noindent \sffamily \abstractname.}}
+	{\vskip 0.1em \medskip\noindent \rule{\linewidth}{.5pt}}
+\usepackage{lmodern}
+\renewcommand*\familydefault{\sfdefault} 
+
+\usepackage[T1]{fontenc}
+\usepackage{sectsty}
+\partfont{\sffamily\fontsize{20}{30}\selectfont}
+\sectionfont{\sffamily\fontsize{16}{30}\selectfont}
+\subsectionfont{\sffamily\fontsize{14}{20}\selectfont}
+
+%Style Hyperlink
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks,
+    citecolor=black,
+    filecolor=black,
+    linkcolor=black,
+    urlcolor=black
+}
+%\renewcommand{\figurename}{\footnotesize Figure}
+%\renewcommand{\tablename}{\footnotesize Table}
+\renewcommand{\contentsname}{Outline}
