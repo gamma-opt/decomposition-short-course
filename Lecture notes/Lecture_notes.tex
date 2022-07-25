@@ -40,7 +40,7 @@ We focus on four methods, namely Benders decomposition (or the L-shaped method),
 
 \section{Introduction: stochastic programming problems}
 
-We start by considering the type of mathematical programming problems we are interested in solving. Let $x \in \reals^n \times \braces{0,1}^p$, to which we will refer to as \emph{first-stage} variables. Also, assume that a set of \emph{scenarios} are defined and represented by $s \in S$.
+We start by considering the type of mathematical programming problems we are interested in solving. Let $x \in \reals^n \times \braces{0,1}^p$, to which we will refer to as \emph{first-stage} variables. Also, most of the time, we will assume that a set of \emph{scenarios} $s \in S$ is vailable.
 
 We can then define \emph{second-stage} variables $y_s \in \reals^m \times \braces{0,1}^q$, $\forall s \in S$, which represent decisions made after the realisation of a given scenario $s \in S$ is observed.
 
@@ -49,25 +49,25 @@ In its simplest form, a two-stage stochastic programming (2SSP) problem can be s
 \begin{align*}
 	\mini & c^\top x + \sum_s p_s q_s^\top y_s \\	
 	\st   & Ax = b \\
-		  & T_s x + W_s y = h_s, \ \forall s \in S \\
-		  & x \in X, \\
-		  & y_s \in Y_s, \forall s \in S.	
+		  & T_s x + W_s y_s = h_s, \ \forall s \in S.
+%		  & x \in X, \\
+%		  & y_s \in Y_s, \forall s \in S.	
 \end{align*}
 
-Parameters $c$, $b$, $p_s$ and $q_s$ are all of adequate size. Assume that $A$ has $c_1$ rows, while $T_s$ and $W_s$ have $c_2$ rows. The sets $X$ and $Y_s$, $\forall s \in S$, define bounds and nonnegativity conditions of the continuous variables.
+Parameter (or input) vectors $c$, $b$, $p_s$ and $q_s$ and matrices $T_s$ and $W_s$ are all of adequate size. All parameters indexed by $s \in S$ are assumed to take different values according to the observed scenario, i.e., to be dependent on $s \in S$.
+%The sets $X$ and $Y_s$, $\forall s \in S$, define bounds and nonnegativity conditions of the continuous variables.
  
- Notice that this is a rather general formulation. Furthermore, it can be adapted to encompass more stages, say $T$ stages, creating a ``nesting'' effect, where, at each stage $t$, the variables associated with $t-1$ act as first-stage variables. For example, a $T=3$-stage problem can be formulated as follows.
+ Notice that this is a rather general formulation. Furthermore, it can be adapted to encompass more stages, say $T$ stages, creating a ``nesting'' effect, where, at each stage $t$, the variables associated with $t-1$ act as first-stage variables. For example, a $(T=)3$-stage problem can be formulated as follows.
 %
 \begin{align}
-	\mini & c^\top x + \sum_{s^1 \in S^1} p_{s^1} \left[ (q^1_{s^1})^\top y^1_{s^1}  + \sum_{s^2 \in S^2} p^2_{s^2} (q^2_{s^2})^\top y^2_{s^2}\right] \\	
+	\mini & c^\top x + \sum_{s^1 \in S^1} p_{s^1} \left[ (q^1_{s^1})^\top y^1_{s^1}  + \sum_{s^2 \in S^2(s^1)} p^2_{s^2} (q^2_{s^2})^\top y^2_{s^2}\right] \\	
 	\st   & Ax = b \\
 		  & T^1_{s^1} x + W^1_{s^1}y^1_{s^1} = h^1_{s^1}, \ \forall s^1 \in S^1 \\
 		  & T^2_{s^2} x + W^2_{s^2}y^2_{s^2} = h^2_{s^2}, \ \forall s^2 \in S^2 \\
 		  & x \in X, \\
-		  & y^1_{s^1} \in Y^1_{s^1}, \forall s^1 \in S^1 \\	
-		  & y^2_{s^2} \in Y^2_{s^2}, \forall s^2 \in S^2. \\
+		  & y^1_{s^1} \in Y^1_{s^1}, \ \forall s^1 \in S^1 \\	
+		  & y^2_{s^2} \in Y^2_{s^2}, \ \forall s^2 \in S^2(s^1), s^1 \in S^1. \\
 \end{align}
-
 
 Graphically, the problem would have a structure as presented in figure \ref{fig:problem_structure}.
 
@@ -95,11 +95,11 @@ Graphically, the problem would have a structure as presented in figure \ref{fig:
 	\caption{Representation of the problem structure of a 3-stage stochastic problems. The circles represent stages, at which a decision is made and the branches represent scenarios.} \label{fig:problem_structure}
 \end{figure}
 
-In what follows, we will concentrate on 2SSP models for simplicity, but most of the methods we will see have an equivalent form for multi-stage settings.
+In what follows, we will concentrate on 2SSP models for simplicity, but most of the methods we will see can be posed in an equivalent form for multi-stage settings.
 
 \section{Decomposition: motivation}
 
-One critical aspect of stochastic programming models is that having multiple scenarios and stages rapidly increases the scale of the model. This typically poses issues related to their practical applicability due to steep computational requirements.
+One critical aspect of stochastic programming models is that having multiple scenarios and stages rapidly \emph{increases the scale} of the model. This typically poses issues related to their practical applicability due to steep computational requirements.
 
 Therefore, one often must rely on methods that allow for breaking these problems into smaller and more manageable parts that can be recombined into a solution to the original problem. Moreover, this can often be done in a way that reaps benefits from parallelisation, leading to even further solution time speed-ups. 
 
@@ -125,12 +125,12 @@ The other type consists of \emph{complicating constraints}. To see that, let us 
 	\mini & \sum_s P_s\left(c^\top x_s + q_s^\top y_s\right) \\	
 	\st   & Ax_s = b, \forall s \in S \\
 		  & T_s x + W_s y = h_s, \ \forall s \in S \\
-		  & x_s \in X, \ \forall s \in S \\
-		  & y_s \in Y_s, \forall s \in S \\
+%		  & x_s \in X, \ \forall s \in S \\
+%		  & y_s \in Y_s, \forall s \in S \\
 		  & x_1 = \dots = x_{|S|}.	
 \end{align*}
-
-The constraint $x_1 = \dots = x_{|S|}$ is known as the \emph{nonanticipativity conditions} (NAC), since it enforces that the solution $x$ cannot anticipate which scenario may unveil. Now, notice that the structure of the 2SSP model is slightly different.
+%
+The constraint $x_1 = \dots = x_{|S|}$ is known as the \emph{nonanticipativity conditions} (NAC), since it enforces that the solution $x$ cannot anticipate which scenario may unveil. Now, notice that the structure of the 2SSP model becomes slightly different.
 
 \begin{tabular}{rccccc}
 	$\mini$ & $p_1(c_1^\top x_1 + q_q ^\top y_1)$ & $p_2(c_2^\top x_2 + q_2 ^\top y_2)$ & $\dots$ & $p_{|S|}(c_{|S|}^\top x_{|S|} + q_{|S|} ^\top y_{|S|})$ & \\
@@ -143,14 +143,18 @@ The constraint $x_1 = \dots = x_{|S|}$ is known as the \emph{nonanticipativity c
 	& $x_1$ & & & & $= x_{|S|}$ \\
 	& & $x_2$ & & & $= x_{|S|}$
 \end{tabular}
+\vspace{6pt}
 
 Notice that what prevents separability now are the constraints that enforce the NAC. In this case, we say that they are \emph{complicating constraints}.
 
 In these lectures, we will discuss four methods, namely
-\begin{itemize}
-	\item \textbf{Benders decomposition and constraint-and-column generation}: for formulations with complicating variables.
-	\item \textbf{Lagrangian decomposition and progressive hedging}: for formulations with complicating constraints.	
-\end{itemize}
+\begin{enumerate}
+	\item[(1)] \textbf{Benders decomposition and constraint-and-column generation}: for formulations with complicating variables.
+	\item[(2)] \textbf{Lagrangian decomposition and progressive hedging}: for formulations with complicating constraints.	
+\end{enumerate}
+
+
+There is no absolute consensus in the literature concerning which method is best. In a nutshell, the methods in (1) are less dependent on good parametrisation and can better exploit linear optimisation solver features such as warm starting, callbacks, lazy constraints, and so forth. On the other hand, they typically do not speed up as well when parallelised. On the other hand, the methods in (2) can sometimes scale linearly with the number of processors in terms of solution times, but they suffer from being parametrisation (and thus problem dependent). 
 
 
 
@@ -162,38 +166,36 @@ In these lectures, we will discuss four methods, namely
 Benders decomposition is a delayed constraint generation approach. To see how it works, let us first split our problem as 
 %
 \begin{align*}
-	\mini & c^\top x + \mathcal{Q}(x) \\
-	\st   & Ax = b \\
-		  & x \in X			
+	\mini_x & c^\top x + \mathcal{Q}(x) \\
+	\st   & Ax = b,	
 \end{align*}
 
 where $\mathcal{Q}(x)$ is defined as
 %
 \begin{align*}
-	\mathcal{Q}(x) = \mini & \sum_s p_s q_s^\top y_s \\	
+	\mathcal{Q}(x) = \mini_y & \sum_s p_s q_s^\top y_s \\	
 	\st & W_s y_s = h_s - T_s x, \ \forall s \in S.
 \end{align*}
 
 Notice that $\mathcal{Q}(x)$ is separable scenario-wise, i.e., can be solved separately for each $s \in S$. Now, let us consider the dual formulation of $Q(x)$.
 %
 \begin{align*}
-	\mathcal{Q}(x) = \maxi & \sum_s \pi_s ^\top (h_s - T_s x) \\	
+	\mathcal{Q}(x) = \maxi_\pi & \sum_s \pi_s ^\top (h_s - T_s x) \\	
 	\st & W_s \pi_s \leq p_s q_s, \ \forall s \in S.
 \end{align*}
 
-Since we are using linear programming duality, we must require that all second-stage variables $y_s$, $\forall s \in S$ are continuous (i.e., $q = 0$). This is an assumption that can be relaxed using an alternative variant of the method \citep{LAPORTE1993}, but we will leave this discussion out for now. 
+Since we are using linear programming duality, we must require that all second-stage variables $y_s$, $\forall s \in S$, are continuous (i.e., $q = 0$). This is an assumption that can be relaxed using an alternative variant of the method \citep{LAPORTE1993}, but we will leave this discussion out for now. 
 
-Since the dual of $Q(x)$ (and $Q(x)$) is a linear programming problem, we know that it has an equivalent representation based on a finite number of extreme points (vertices) and extreme rays. For simplicity, let us assume that we have \emph{relatively complete recourse}, meaning that $Q(x)$ is feasible for any value of $x$ satisfying $Ax = b$ and $x \in X$. This allows us to preclude the treatment of extreme rays since the dual form of $Q(x)$ cannot be unbounded (which is the case for an infeasible $Q(x)$).
+Since the dual of $\mathcal{Q}(x)$ is a linear programming problem, we know that it has an equivalent representation based on a finite number of extreme points (vertices) and extreme rays. For simplicity, let us assume that we have \emph{relatively complete recourse}, meaning that $\mathcal{Q}(x)$ is feasible for any value of $x$ satisfying $Ax = b$. This allows us to preclude the treatment of extreme rays since the dual form of $\mathcal{Q}(x)$ cannot be unbounded (which is the case for an infeasible $\mathcal{Q}(x)$).
 
-If we knew all extreme points $\pi^k = (\pi_s^k)_{s \in S}$, $k = 1, \dots, K$ of the feasible region of the dual of $Q(x)$, we could rewrite our original 2SSP as
+If we knew all extreme points $\pi^k = (\pi_s^k)_{s \in S}$, $k = 1, \dots, K$ of the feasible region of the dual of $\mathcal{Q}(x)$, we could rewrite our original 2SSP as
 %
 \begin{align*}
-	\mini & c^\top x + \theta \\
+	\mini_{x,\theta} & c^\top x + \theta \\
 	\st   & \theta \geq \sum_s (\pi_s^k)^\top (h_s - T_s x),\ k = 1, \dots, K \\
-	&Ax = b \\
-	& x \in X.	
+	&Ax = b.
 \end{align*}
-
+%
 Notice that this would allow us to represent the subproblem $\mathcal{Q}(x)$ as a piecewise linear function of $x$. Naturally, assuming that all extreme points $\braces{\pi^k}_{k=1,\dots,K}$ are available is not a practical assumption. However, we can iteratively generate them ``on the fly'', one at a time, and proceed to incrementally adding cuts (or constraints) of the form
 %
 \begin{equation*}
@@ -208,16 +210,15 @@ The method can be summarised as follows:
 	\item[\bf Step 1:] Initialisation. Set $LB = -\infty$, $UB = \infty$, $k=0$. 
 	\item[\bf Step 2:] Solve the \emph{main problem} $M^k$
 	\begin{align*}
-		M^k: \mini & c^\top x + \theta \\
-		     \st & \theta \geq \sum_s (\pi_s^k)^\top (h_s - T_s x), \ k = 1, \dots K, \\
-		     & Ax = b \\
-		     & x \in X. 	
+		M^k: \mini_{x,\theta} & c^\top x + \theta \\
+		     \st & \theta \geq \sum_s (\pi_s^l)^\top (h_s - T_s x), \ l = 1, \dots k, \\
+		     & Ax = b.	
 	\end{align*} 
 	%
 	Let $\underline{z}^k = c^\top x^k + \theta^k$, where $(x^k, \theta^k)$ are the optimal solutions of $M^k$. Make $LB = \underline{z}^k$.
 	\item[\bf Step 3:] Solve the subproblem $SP(x^k)$
 	\begin{align*}
-		SP(x^k): \maxi & \sum_s \pi_s ^\top (h_s - T_s x^k) \\
+		SP(x^k): \maxi_{\pi} & \sum_s \pi_s ^\top (h_s - T_s x^k) \\
 		     \st & W_s^\top \pi_s  \leq p_s q_s, \ \forall s \in S.
 	\end{align*}  
 	%
@@ -227,24 +228,24 @@ The method can be summarised as follows:
 		\theta \geq \sum_s (\pi_s^k)^\top (h_s - T_s x)
 	\end{equation*}
 	%
-	and add it to $MP^k$. Return to Step 2.
+	and add it to $M^k$. Return to Step 2.
 \end{enumerate}
 
 Some final remarks:
 \begin{enumerate}
-	\item It may be that the subproblem is infeasible, in case the assumption concerning the relative completeness of the recourse does not hold. In this case, instead of an optimality cut, a feasibility cut of the form
+	\item In the context of stochastic programming, some people refer to this application of Benders decomposition as the L-Shaped method \citep{VANSLYKE1969}, as a reference to the block-angular structure of the problem.
+	\item It may be that the subproblem is infeasible in case the assumption concerning the relative completeness of the recourse does not hold. In this case, instead of an optimality cut, a feasibility cut of the form
 		\begin{equation*}
 			\sum_s (\pi_s^k)^\top (h_s - T_s x) \leq 0,
 		\end{equation*}
 		%
- 		must be generated since, in this case, $\pi_s^k$, $\forall s \in S$, represents an extreme ray (or unbounded direction).
+ 		must be generated since, in this case, $(\pi_s^k)_{s \in S}$ represents an extreme ray (or unbounded direction).
 	\item It is likely that the main problem is unbounded in the first few iterations. Ideally, one should impose trust regions or generate a couple of feasible solutions $x$ to prepolulate it with cuts. 
 	\item \cite{BIRGE1988} proposed a multi-cut version, in which the main problem is modified as
 	\begin{align*}
-		M^k_{\text{multi}}: \mini & c^\top x + \sum_s \theta_s \\
-		     \st & \theta_s \geq (\pi_s^k)^\top (h_s - T_s x), \  \forall s \in S, k = 1, \dots K, \\
-		     & Ax = b \\
-		     & x \in X. 	
+		M^k_{\text{multi}}: \mini_{x,\theta} & c^\top x + \sum_s \theta_s \\
+		     \st & \theta_s \geq (\pi_s^l)^\top (h_s - T_s x), \  \forall s \in S, l = 1, \dots k, \\
+		     & Ax = b. 	
 	\end{align*}
 	%
 	This exploits the separability of the subproblem and can be beneficial for convergence at the expense of a faster increase in the main problem size as the iterations progress, as more constraints are generated per iteration (one per scenario $s \in S$). 
@@ -263,9 +264,7 @@ Now we turn our focus to a specific type of optimisation under uncertainty in wh
 \begin{align*}
 	\min_x \ & c^\top x + \max_{u \in \mathcal{U}} \min_{y} q^\top y \\
 	\st   & Ax = b \\
-	& x \in X \\
-	& Tx = h - Wy - Mu \\
-	& y \in Y.
+	& Tx = h - Wy - Mu.
 \end{align*}
 %
 As before, we have that $x \in \reals^{n} \times \braces{0,1}^p$, $y \in \reals^m \times \braces{0,1}^q$. All matrices and vectors are assumed of appropriate sizes. The set $\mathcal{U}$ is known as the \emph{uncertainty set}, which can be, e.g., a discrete set of scenarios or a polyhedral set.
@@ -280,12 +279,10 @@ First, let us assume that $\mathcal{U}$ is finite and discrete. Then, we can say
 This allows us to reformulate our problem into a deterministic equivalent form as follows.
 %
 \begin{align*}
-	\mini & c^\top x + \theta \\
+	\mini_x & c^\top x + \theta \\
 	\st & Ax = b \\
-	& x \in X \\
 	& \theta \geq q^\top y_s, \ \forall s \in S \\
-	& Tx = h - Wy_s - Mu_s \ \forall s \in S \\
-	& y_s \in Y, \forall s \in S.
+	& Tx = h - Wy_s - Mu_s, \ \forall s \in S.
 \end{align*}
 %
 Notice that this might still be a large-scale problem. However, we can see that if we have a method to optimally choose \emph{non-trivial (or critical) scenarios}, we can start from a subset of scenarios $S = \braces{1, \dots, r}$ and gradually augment it until convergence is observed. 
@@ -298,9 +295,7 @@ The column-and-constraint generation (CCG) method \citep{ZENG2013} is based on t
 First, let us restate our problem as 
 %
 \begin{align*}
-	\mini & c^\top x + \mathcal{Q}(x) \\
-	& Ax = b \\
-	& x \in X,
+	\mini_x & c^\top x + \mathcal{Q}(x),
 \end{align*}
 %
 where 
@@ -308,7 +303,7 @@ where
 	\mathcal{Q}(x)	 = \braces{\max_{u \in \mathcal{U}} \min_y q^\top y : Tx = h - Wy - Mu, y \in Y}.
 \end{equation*}
 %
-Assume that we have an \emph{oracle} that can solve $Q(x)$ for any given $x$ and returns an optimal solution $(y^*, u^*)$ if it exists. The CCG method can be summarised as follows.
+Assume that we have an \emph{oracle} that can solve $\mathcal{Q}(x)$ for any given $x$ and returns an optimal solution $(y^*, u^*)$ if it exists. The CCG method can be summarised as follows.
 
 \begin{enumerate}
 	\item[\bf Step 1:] Initialisation. $LB = -\infty$, $UB = \infty$, $k = 0$.
@@ -316,18 +311,16 @@ Assume that we have an \emph{oracle} that can solve $Q(x)$ for any given $x$ and
 	\begin{align*}
 		M^k: \mini_{x,y,\theta} & c^\top x + \theta \\
 		& Ax = b \\
-		& x \in X \\
-		& \theta \geq q^\top y_s, s = 1, \dots, k \\
-		& Tx = h - Wy_s - M\overline{u}_s, s = 1, \dots, k \\
-		& y_s \in Y, s = 1, \dots, k.
+		& \theta \geq q^\top y_l, \ l = 1, \dots, k \\
+		& Tx = h - Wy_l - M\overline{u}_l, \  l = 1, \dots, k.
 	\end{align*}
 	%
-	Let $\underline{z}^k = c^\top x^k + \theta^k$, where $(x^k, \theta^k, (y_s^k)_{s=1}^k)$ form the optimal solution of $M^k$. Make $LB = \underline{z}^k$.
+	Let $\underline{z}^k = c^\top x^k + \theta^k$, where $(x^k, \theta^k, (y_l^k)_{l=1}^k)$ form the optimal solution of $M^k$. Make $LB = \underline{z}^k$.
 	\item[\bf Step 3:] call the oracle that solves $\mathcal{Q}(x^k)$. Let $(\overline{u}^{k+1}, y^{k+1})$ be the optimal solution returned by the oracle, if it exists. Let $\overline{z}^{k} = c^\top x^k + \mathcal{Q}(x^k)$. Make  $UB = \min\braces{UB, \overline{z}^{k}}$. If $UB = LB < \epsilon$, return $x^k$ as the optimal solution.
 	\item [\bf Step 4:] if $\mathcal{Q}(x^k) < \infty$ (i.e., is feasible), create variables $y_{k+1}$ and add them to the main problem, together with the constraints
 	\begin{align*}
 		& \theta \geq q^\top y_{k+1} \\
-		& Tx = h - Wy_{k+1} - M\overline{u}^{k+1}
+		& Tx = h - Wy_{k+1} - M\overline{u}_{k+1}
 	\end{align*}
   	to form $M^{k+1}$. Make $k = k+1$ and return to Step 2. If $\mathcal{Q}(x^k)$ is not feasible, then only the second constraint needs to be created.
 \end{enumerate}
@@ -341,18 +334,17 @@ The final part missing for having a practical algorithm is the definition of the
 	\mathcal{Q}(x)	 = &\max_u q^\top y    \\
 	   \st &u \in \mathcal{U}  \\ 	 
 		   &y \in \argmin_y q^\top y \\
-	       &\qquad \quad \st Tx = h - Wy - Mu \\
-		   &\qquad \qquad \quad \ y \in Y.	
+	       &\qquad \quad \st Tx = h - Wy - Mu.
 \end{align*}
 
 Essentially, $\mathcal{Q}(x)$ is a \emph{bilevel problem} that must (in general) be reformulated into a tractable equivalent single-level problem in order to be appropriately solved. This can be achieved by employing a variety of different approaches, in which most, if not all, rely on the convexity of the lowermost problem. 
 
-For example, for a fixed $u \in \mathcal{U}$, assuming that $y \in \reals^m$ and disregarding the set $Y$\footnote{the set $Y$ can be incorporated into the set of constraints $Tx = h - Wy - Mu$ by making $T$ and $M$ null matrices.}  we can use strong duality to reformulate the inner problem, obtaining
+For example, for a fixed $u \in \mathcal{U}$, assuming that $y \in \reals^m$, we can use strong duality to reformulate the inner problem, obtaining
 %
 \begin{align*}
 	\mathcal{Q}(x) = &\max_{u,\pi} (h - Tx - Mu)^\top \pi \\
 	   \st & \pi^\top W = q^\top \\
-	   	   &u \in \mathcal{U}	 
+	   	   &u \in \mathcal{U},	 
 \end{align*}
 %
 which is tractable, if 
@@ -365,7 +357,7 @@ which is tractable, if
 Some final remarks: 
 
 \begin{enumerate}
-	\item The CCG method can be seen as a primal equivalent of the Benders decomposition. In fact, one can use the same idea of generating primal variables and constraints to the main problem in the context of the L-Shaped method. \citet{GAMBOA2021} shows a comparison between variants of the L-Shaped method and CCG for the 2SSP problem.
+	\item The CCG method can be seen as a primal equivalent of the Benders decomposition. In fact, one can use the same idea of generating primal variables and constraints to the main problem in the context of the L-Shaped method. \citet{GAMBOA2021} show a comparison between variants of the L-Shaped method and CCG for a variant of the 2SSP problem that incorporates distributionally robustness requirements.
 	\item Notice that convergence relies on a finiteness argument on the uncertainty set. For convergence to be guaranteed, we must require that, for example, $\mathcal{U}$ is a set of discrete elements or a polyhedral set (thus with a finite number of extreme points and rays).
 \end{enumerate}
 
@@ -527,7 +519,8 @@ The DD method can be summarised as follows
 	\item[\bf Step 3:] If $||(g_s)_s \in S|| < \epsilon$, return $(x_s^k, y_s^k)$ and $LB^{k+1}$. Otherwise, $k=k+1$, update $\lambda^k$ using the chosen method and return to Step 2.	 		
 \end{enumerate}
 
-One point to remark is that, if the evaluation of the Lagrangian dual function requires one to solve MIPs, strong duality may not hold. This means that solving the Lagrangian dual problem is at best a \emph{bounding techinque} that can be combined with branching strategies to find an optimal solution. The combination of a branching strategy specialised for NAC conditions and bounding using Lagrangian decomposition is known as dual decomposition (Carøe and Schultz, 1998) 
+One point to remark is that, if the evaluation of the Lagrangian dual function requires one to solve MIPs, strong duality may not hold. This means that solving the Lagrangian dual problem is at best a \emph{bounding techinque} that can be combined with branching strategies to find an optimal solution. The combination of a branching strategy specialised for NAC conditions and bounding using Lagrangian decomposition is known as dual decomposition (Carøe and Schultz, 1998)
+%TODO: Cite Brian's paper
 
 
 \pagebreak
@@ -704,7 +697,7 @@ Some final remarks:
 		\sum_s p_s \left[||x_s^k - z_k||_2^2 + ||z_k - z_{k-1}||_2^2\right]	= \sum_s p_s ||x_s^k - z_{k-1}||_2^2.
 	\end{equation*}
 	\item The penalty coefficient $\rho$ can be set at different values per component $s \in S$, and it can also be updated during the algorithm execution. In \citet{OLIVEIRA2020}, we explored some ideas in this direction. Ideas relating to setting good penalty parameters $\rho$ have initially been explored in \citet{WATSON2011}. 
-	\item In the presence of integer variables, PH is a heuristic, as the alternating strategy loses its convergence guarantees. This can be addressed with a variant of the method \citep{BOLAND2018, BOLAND2019}, but it only makes it a bounding strategy due to the possible presence of duality gaps. \citet{KIM2022} describe how PH can be incorporated within a branch-and-bound algorithm for addressing eventual duality gaps.
+	\item In the presence of integer variables, PH is a heuristic, as the alternating strategy loses its convergence guarantees. This can be addressed with a variant of the method \citep{BOLAND2018, BOLAND2019}, but it only makes it a bounding strategy due to the possible presence of duality gaps. \citet{ATAKAN2018} describe how PH can be incorporated as a bounding strategy within a branch-and-bound algorithm.
 \end{enumerate}
 
 \pagebreak

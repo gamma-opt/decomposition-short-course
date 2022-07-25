@@ -8,6 +8,7 @@ TotalFacilities = 10
 TotalClients = 50
 TotalScenarios = 100
 
+# Solving the full space problem for reference
 instance = generate_instance(TotalFacilities, TotalClients, TotalScenarios)
 fullmodel = generate_full_problem(instance)
 optimize!(fullmodel)
@@ -18,16 +19,16 @@ optimize!(fullmodel)
 # Generates the main problem
 function generate_main(instance)
     
-    I, J, S, K, P, O, V, U, T, D, bigM = unroll_instance(instance)
+    I, J, S, N, P, O, V, U, T, D, bigM = unroll_instance(instance)
     
-    main = Model(()->Gurobi.Optimizer(GRB_ENV))
+    main = Model(myGurobi)
     set_silent(main)
     
     @variable(main, x[I], Bin)
     @variable(main, y[I] >= 0)
     @variable(main, θ)
 
-    @constraint(main, sum(x[i] for i in I) <= K)
+    @constraint(main, sum(x[i] for i in I) <= N)
     @constraint(main, sum(y[i] for i in I) <= bigM) # This is to guarantee boundedness
 
     @objective(main, Min, sum(O[i] * x[i] + V[i] * y[i] for i in I) + θ)
@@ -36,7 +37,7 @@ function generate_main(instance)
 end
 
 # Solve the main problem
-function solve_main(ins, main)
+function solve_main(main)
     optimize!(main)
     return value.(main[:x]), value.(main[:y]), value(main[:θ]), objective_value(main)    
 end
@@ -46,9 +47,9 @@ end
 the dual subproblem must be the same as this. =#
 function generate_and_solve_primal_subproblem(instance, x_bar, y_bar)
     
-    I, J, S, K, P, O, V, U, T, D, bigM = unroll_instance(instance)
+    I, J, S, N, P, O, V, U, T, D, bigM = unroll_instance(instance)
     
-    sub = Model(()->Gurobi.Optimizer(GRB_ENV))
+    sub = Model(myGurobi)
     set_silent(sub)
     
     @variable(sub, w[I,J,S] >= 0)
@@ -81,9 +82,9 @@ end
 # The dual version of the subproblem
 function generate_and_solve_dual_subproblem(instance, x_bar, y_bar)
     
-    I, J, S, K, P, O, V, U, T, D, bigM = unroll_instance(instance)
+    I, J, S, N, P, O, V, U, T, D, bigM = unroll_instance(instance)
      
-    sub_dual = Model(()->Gurobi.Optimizer(GRB_ENV))
+    sub_dual = Model(myGurobi)
     set_silent(sub_dual)
      
     @variable(sub_dual, u[I,S] <= 0)
@@ -101,8 +102,7 @@ function generate_and_solve_dual_subproblem(instance, x_bar, y_bar)
           sum(bigM * x_bar[i] * q[i,s] for i in I) +
           sum(y_bar[i] * u[i,s] for i in I) +
           sum(D[j,s] * r[j,s] for j in J) 
-       for s in S
-       )   
+       for s in S)   
     )
  
     optimize!(sub_dual)
@@ -115,19 +115,21 @@ function generate_and_solve_dual_subproblem(instance, x_bar, y_bar)
     return u_bar, q_bar, r_bar, opt_value
  end
 
-# # Test that the primal and dual solutions are the same
+# Test that the primal and dual solutions are the same
 @show x_bar = Int.(round.(value.(fullmodel[:x]).data))
 @show y_bar = value.(fullmodel[:y])
 
 u_bar, q_bar, r_bar, dual_obj = generate_and_solve_dual_subproblem(instance, x_bar, y_bar)
 primal_obj = generate_and_solve_primal_subproblem(instance, x_bar, y_bar)
 
+# This throws an error if they do not match
+@assert(primal_obj ≈ dual_obj) 
 
 
 # Add the Benders cut, given current dual values
 function add_benders_cut(instance, main, u_bar, q_bar, r_bar)   
     
-    I, J, S, K, P, O, V, U, T, D, bigM = unroll_instance(instance)
+    I, J, S, N, P, O, V, U, T, D, bigM = unroll_instance(instance)
     
     x = main[:x]
     y = main[:y]
@@ -138,16 +140,12 @@ function add_benders_cut(instance, main, u_bar, q_bar, r_bar)
                 sum(bigM * x[i] * q_bar[i,s] for i in I) +
                 sum(y[i] * u_bar[i,s] for i in I) +
                 sum(D[j,s] * r_bar[j,s] for j in J) 
-            for s in S
-        ) 
+            for s in S) 
     )
 
     return main
 end  
 
-
-using Test
-@test primal_obj ≈ dual_obj
 
 # The main function code
 function benders_decomposition(ins; max_iter = 100)
@@ -166,7 +164,7 @@ function benders_decomposition(ins; max_iter = 100)
     main = add_benders_cut(ins, main, u_bar, q_bar, r_bar) 
 
     while k <= max_iter && gap > ϵ
-        x_bar, y_bar, θ_bar, f_main = solve_main(ins, main);
+        x_bar, y_bar, θ_bar, f_main = solve_main(main);
         u_bar, q_bar, r_bar, f_sub = generate_and_solve_dual_subproblem(ins, x_bar, y_bar);
 
         LB = f_main
@@ -176,8 +174,7 @@ function benders_decomposition(ins; max_iter = 100)
         
         if gap <= ϵ
             stop = time()
-            println("\nOptimal found. \nObjective value: $(round(UB, digits=2)) \n Total time: $(round(stop-start, digits=2))s \n gap: $(round(100.0*gap, digits=4))%\n"
-                     )
+            println("\nOptimal found. \nObjective value: $(round(UB, digits=2)) \n Total time: $(round(stop-start, digits=2))s \n gap: $(round(100.0*gap, digits=4))%\n")
             return
         else    
             main = add_benders_cut(ins, main, u_bar, q_bar, r_bar)  

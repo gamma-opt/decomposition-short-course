@@ -1,21 +1,20 @@
 using BilevelJuMP
 
-GRB_ENV = Gurobi.Env()
+include("$(pwd())/instance_generation.jl")
 
-include("$(pwd())/instance_generation_cc.jl")
-
-TotalFacilities = 10
-TotalClients = 30
+TotalFacilities = 5
+TotalClients = 10
 TotalScenarios = 50
 
+# Solving the full space problem for reference
 instance = generate_instance(TotalFacilities, TotalClients, TotalScenarios)
 expected_value_model = generate_full_problem(instance)
 optimize!(expected_value_model)
 
-
+# Generating the scenario-based min-max
 function generate_full_minimax_problem(instance::Instance; solver=Gurobi)
     
-    I, J, S, K, P, O, V, U, T, D, bigM = unroll_instance(instance)
+    I, J, S, N, P, O, V, U, T, D, bigM = unroll_instance(instance)
 
     # Initialize model
     m = Model(solver.Optimizer)
@@ -30,7 +29,7 @@ function generate_full_minimax_problem(instance::Instance; solver=Gurobi)
     # Constraints
     # Maximum number of servers
     @constraint(m, numServers,
-        sum(x[i] for i in I) <= K
+        sum(x[i] for i in I) <= N
     )
     
     # Capacity limits: cannot deliver more than capacity decided, 
@@ -62,6 +61,7 @@ function generate_full_minimax_problem(instance::Instance; solver=Gurobi)
     return m  # Return the generated model
 end
 
+# Solving the minimax
 minimax = generate_full_minimax_problem(instance::Instance)
 optimize!(minimax)
 
@@ -77,20 +77,20 @@ optimize!(minimax)
 @show obj_minmax = objective_value(minimax)
 
 
-## Column and constraint generation
+## Column-and-constraint generation method
 # Generates the main problem
 function generate_main(instance)
     
-    I, J, S, K, P, O, V, U, T, D, bigM = unroll_instance(instance)
+    I, J, S, N, P, O, V, U, T, D, bigM = unroll_instance(instance)
     
-    main = Model(() -> Gurobi.Optimizer(GRB_ENV))
+    main = Model(myGurobi)
     set_silent(main)
     
     @variable(main, x[I], Bin)
     @variable(main, 0 <= y[I] <= bigM)
     @variable(main, θ)
 
-    @constraint(main, sum(x[i] for i in I) <= K)
+    @constraint(main, sum(x[i] for i in I) <= N)
     
     @objective(main, Min, sum(O[i] * x[i] + V[i] * y[i] for i in I) + θ)
 
@@ -111,7 +111,7 @@ function add_columns_and_constraints(instance, main, d_bar, iter)
     main[Symbol("w_$(iter)")] = @variable(main, [I,J], lower_bound = 0.0, base_name = "w_$(iter)")
     main[Symbol("z_$(iter)")] = @variable(main, [J], lower_bound = 0.0, base_name = "z_$(iter)")
     
-    # For clarity only, we allocate to local variables 
+    # For a cleaner code, we allocate to local variables 
     w = main[Symbol("w_$(iter)")]
     z = main[Symbol("z_$(iter)")]
     
@@ -134,21 +134,18 @@ function add_columns_and_constraints(instance, main, d_bar, iter)
     return main
 end  
 
-
 # Solve the main problem
-function solve_main(ins, main)
+function solve_main(main)
     optimize!(main)
     return value.(main[:x]), value.(main[:y]), value(main[:θ]), objective_value(main)    
 end
 
-
-
 # Define the CC subproblem. A couple of variants
 function generate_and_solve_dualized_subproblem(instance, x_bar, y_bar, Γ)
     
-   I, J, S, K, P, O, V, U, T, D, bigM, D_average, D_deviation = unroll_instance(instance)
+   I, J, S, N, P, O, V, U, T, D, bigM, D_average, D_deviation = unroll_instance(instance)
     
-   sub_dual = Model(() -> Gurobi.Optimizer(GRB_ENV))
+   sub_dual = Model(myGurobi)
    set_optimizer_attribute(sub_dual, "NonConvex", 2) # Call spatial BB solver
 
    set_silent(sub_dual)
@@ -193,7 +190,7 @@ end
 # Uses the result that g is always integer anyways and apply linearisation
 function generate_and_solve_linearized_subproblem(instance, x_bar, y_bar, Γ)
     
-    I, J, S, K, P, O, V, U, T, D, bigM, D_average, D_deviation = unroll_instance(instance)
+    I, J, S, N, P, O, V, U, T, D, bigM, D_average, D_deviation = unroll_instance(instance)
      
     sub_dual = Model(()->Gurobi.Optimizer(GRB_ENV)) 
     set_silent(sub_dual)
@@ -214,9 +211,9 @@ function generate_and_solve_linearized_subproblem(instance, x_bar, y_bar, Γ)
     )
  
     # Uncertainty set
-   #  @constraint(sub_dual, [j in J],
-   #     d[j] == D_average[j] + g[j] * D_deviation
-   #  )
+    #  @constraint(sub_dual, [j in J],
+    #     d[j] == D_average[j] + g[j] * D_deviation
+    #  )
  
     @constraint(sub_dual, [j in J],
        sum(g[j] for j in J) <= Γ
@@ -250,17 +247,14 @@ function generate_and_solve_bilevel_subproblem(instance, x_bar, y_bar, Γ)
     
    I, J, S, K, P, O, V, U, T, D, bigM, D_average, D_deviation = unroll_instance(instance)
      
-   sub_dual = BilevelModel(()->Gurobi.Optimizer(GRB_ENV), mode = BilevelJuMP.SOS1Mode()) 
+   sub_dual = BilevelModel(myGurobi, mode = BilevelJuMP.SOS1Mode()) 
    set_silent(sub_dual)
      
-    #%
    @variable(Upper(sub_dual), d[J] >= 0)
    @variable(Upper(sub_dual), 0 <= g[J] <= 1)
    @variable(Lower(sub_dual), w[I,J] >= 0)
    @variable(Lower(sub_dual), z[J] >= 0)
  
-   # Capacity limits: cannot deliver more than capacity decided, 
-   #   and only if facility was located
    @constraint(Lower(sub_dual), capBal[i in I],
       sum(w[i,j] for j in J) <=  y_bar[i]
    )
@@ -269,7 +263,6 @@ function generate_and_solve_bilevel_subproblem(instance, x_bar, y_bar, Γ)
       sum(w[i,j] for j in J) <= x_bar[i] * bigM
    )
    
-   # Demand balance: Demand of active clients must be fulfilled
    @constraint(Lower(sub_dual), demBal[j in J],
       sum(w[i,j] for i in I) >= d[j] - z[j]
    )
@@ -291,7 +284,6 @@ function generate_and_solve_bilevel_subproblem(instance, x_bar, y_bar, Γ)
       sum(T[i,j] * w[i,j] for i in I, j in J) + sum(U * z[j] for j in J)
    ) 
    
-   #%
    optimize!(sub_dual)
    
    d_bar = [value(d[j]) for j in J]                 
@@ -300,10 +292,9 @@ function generate_and_solve_bilevel_subproblem(instance, x_bar, y_bar, Γ)
    return d_bar, opt_value
  end
 
-
  function cc_decomposition(ins; max_iter = 100, Γ = 10, sub_method = :linear)
     k = 1
-    ϵ = 0.005
+    ϵ = 1e-4
     LB = -Inf
     UB = +Inf
     gap = +Inf
@@ -327,10 +318,16 @@ function generate_and_solve_bilevel_subproblem(instance, x_bar, y_bar, Γ)
     main = add_columns_and_constraints(ins, main, d_bar, k) 
 
     while k <= max_iter && gap > ϵ
-        x_bar, y_bar, θ_bar, f_main = solve_main(ins, main);
-        # d_bar, f_sub = generate_and_solve_dualized_subproblem(ins, x_bar, y_bar, Γ);
-        # d_bar, f_sub = generate_and_solve_linearized_subproblem(ins, x_bar, y_bar, Γ);
-        d_bar, f_sub = generate_and_solve_bilevel_subproblem(ins, x_bar, y_bar, Γ);
+        x_bar, y_bar, θ_bar, f_main = solve_main(main);
+        
+        if sub_method == :linear
+            d_bar, f_sub = generate_and_solve_linearized_subproblem(ins, x_bar, y_bar, Γ);
+        elseif sub_method == :dual    
+            d_bar, f_sub = generate_and_solve_dualized_subproblem(ins, x_bar, y_bar, Γ);
+        else # if sub_method == :bilevel
+            d_bar, f_sub = generate_and_solve_bilevel_subproblem(ins, x_bar, y_bar, Γ);
+        end
+        
         LB = f_main
         UB = min(UB, f_main - θ_bar + f_sub)
         gap = abs((UB - LB) / UB)
@@ -353,8 +350,8 @@ end
 @time x_bar, y_bar, UB = cc_decomposition(instance, max_iter = 5, Γ = 5, sub_method = :bilevel)
 
 UB_k = []
-for i in 1:10
-    x_bar, y_bar, UB = cc_decomposition(instance, max_iter = 5, Γ = i,)
+for i in 1:15
+    ⋅, ⋅, UB = cc_decomposition(instance, max_iter = 5, Γ = i,)
     push!(UB_k, UB)
 end
 
