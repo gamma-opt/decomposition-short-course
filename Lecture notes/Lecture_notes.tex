@@ -40,11 +40,11 @@ We focus on four methods, namely Benders decomposition (or the L-shaped method),
 
 \section{Introduction: stochastic programming problems}
 
-We start by considering the type of mathematical programming problems we are interested in solving. Let $x \in \reals^n \times \braces{0,1}^p$, to which we will refer to as \emph{first-stage} variables. Also, most of the time, we will assume that a set of \emph{scenarios} $s \in S$ is vailable.
+We start by considering the type of mathematical programming problems we are interested in solving. Let $x \in \reals^n \times \braces{0,1}^p$, to which we will refer to as \emph{first-stage} variables. Also, most of the time, we will assume that a set of \emph{scenarios} $s \in S$ is available.
 
 We can then define \emph{second-stage} variables $y_s \in \reals^m \times \braces{0,1}^q$, $\forall s \in S$, which represent decisions made after the realisation of a given scenario $s \in S$ is observed.
 
-In its simplest form, a two-stage stochastic programming (2SSP) problem can be stated as follows
+In its simplest form, a two-stage stochastic programming (2SSP) problem can be stated as
 %
 \begin{align*}
 	\mini & c^\top x + \sum_s p_s q_s^\top y_s \\	
@@ -57,7 +57,7 @@ In its simplest form, a two-stage stochastic programming (2SSP) problem can be s
 Parameter (or input) vectors $c$, $b$, $p_s$ and $q_s$ and matrices $T_s$ and $W_s$ are all of adequate size. All parameters indexed by $s \in S$ are assumed to take different values according to the observed scenario, i.e., to be dependent on $s \in S$.
 %The sets $X$ and $Y_s$, $\forall s \in S$, define bounds and nonnegativity conditions of the continuous variables.
  
- Notice that this is a rather general formulation. Furthermore, it can be adapted to encompass more stages, say $T$ stages, creating a ``nesting'' effect, where, at each stage $t$, the variables associated with $t-1$ act as first-stage variables. For example, a $(T=)3$-stage problem can be formulated as follows.
+ Notice that this is a rather general formulation. Furthermore, it can be adapted to encompass more stages, say $T$ stages, creating a ``nesting'' effect, where, at each stage $t$, the variables associated with $t-1$ act as first-stage variables. For example, a $(T=)3$-stage problem can be formulated as 
 %
 \begin{align}
 	\mini & c^\top x + \sum_{s^1 \in S^1} p_{s^1} \left[ (q^1_{s^1})^\top y^1_{s^1}  + \sum_{s^2 \in S^2(s^1)} p^2_{s^2} (q^2_{s^2})^\top y^2_{s^2}\right] \\	
@@ -66,10 +66,10 @@ Parameter (or input) vectors $c$, $b$, $p_s$ and $q_s$ and matrices $T_s$ and $W
 		  & T^2_{s^2} x + W^2_{s^2}y^2_{s^2} = h^2_{s^2}, \ \forall s^2 \in S^2 \\
 		  & x \in X, \\
 		  & y^1_{s^1} \in Y^1_{s^1}, \ \forall s^1 \in S^1 \\	
-		  & y^2_{s^2} \in Y^2_{s^2}, \ \forall s^2 \in S^2(s^1), s^1 \in S^1. \\
+		  & y^2_{s^2} \in Y^2_{s^2}, \ \forall s^2 \in S^2(s^1), s^1 \in S^1.
 \end{align}
-
-Graphically, the problem would have a structure as presented in figure \ref{fig:problem_structure}.
+%
+The notation $S^2(s^1)$ indicate that the scenarios that can be observed in stage $t=2$ depend on scenario $s^1$ observed in stage $t=1$. Graphically, the problem would have a structure as presented in figure \ref{fig:problem_structure}.
 
 \begin{figure}[h]
 	\begin{tikzpicture}
