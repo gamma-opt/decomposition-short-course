@@ -47,15 +47,15 @@ We can then define \emph{second-stage} variables $y_s \in \reals^m \times \brace
 In its simplest form, a two-stage stochastic programming (2SSP) problem can be stated as
 %
 \begin{align*}
-	\mini & c^\top x + \sum_s p_s q_s^\top y_s \\	
+	\mini_{x, y} & c^\top x + \sum_s p_s q_s^\top y_s \\	
 	\st   & Ax = b \\
-		  & T_s x + W_s y_s = h_s, \ \forall s \in S.
-%		  & x \in X, \\
-%		  & y_s \in Y_s, \forall s \in S.	
+		  & T_s x + W_s y_s = h_s, \ \forall s \in S \\
+		  & x \in X \\
+		  & y_s \in Y, \ \forall s \in S.	
 \end{align*}
 
 Parameter (or input) vectors $c$, $b$, $p_s$ and $q_s$ and matrices $T_s$ and $W_s$ are all of adequate size. All parameters indexed by $s \in S$ are assumed to take different values according to the observed scenario, i.e., to be dependent on $s \in S$.
-%The sets $X$ and $Y_s$, $\forall s \in S$, define bounds and nonnegativity conditions of the continuous variables.
+The sets $X$ and $Y$ define nonnegativity conditions of the continuous variables and the domain of the binary variables.
  
  Notice that this is a rather general formulation. Furthermore, it can be adapted to encompass more stages, say $T$ stages, creating a ``nesting'' effect, where, at each stage $t$, the variables associated with $t-1$ act as first-stage variables. For example, a $(T=)3$-stage problem can be formulated as 
 %
@@ -63,10 +63,10 @@ Parameter (or input) vectors $c$, $b$, $p_s$ and $q_s$ and matrices $T_s$ and $W
 	\mini & c^\top x + \sum_{s^1 \in S^1} p_{s^1} \left[ (q^1_{s^1})^\top y^1_{s^1}  + \sum_{s^2 \in S^2(s^1)} p^2_{s^2} (q^2_{s^2})^\top y^2_{s^2}\right] \\	
 	\st   & Ax = b \\
 		  & T^1_{s^1} x + W^1_{s^1}y^1_{s^1} = h^1_{s^1}, \ \forall s^1 \in S^1 \\
-		  & T^2_{s^2} x + W^2_{s^2}y^2_{s^2} = h^2_{s^2}, \ \forall s^2 \in S^2 \\
-		  & x \in X, \\
-		  & y^1_{s^1} \in Y^1_{s^1}, \ \forall s^1 \in S^1 \\	
-		  & y^2_{s^2} \in Y^2_{s^2}, \ \forall s^2 \in S^2(s^1), s^1 \in S^1.
+		  & T^2_{s^2} y^1_{s^1} + W^2_{s^2}y^2_{s^2} = h^2_{s^2}, \ \forall s^2 \in S^2(s^1), s^1 \in S^1 \\
+		  & x \in X \\
+		  & y^1_{s^1} \in Y, \ \forall s^1 \in S^1 \\	
+		  & y^2_{s^2} \in Y, \ \forall s^2 \in S^2(s^1), s^1 \in S^1.
 \end{align}
 %
 The notation $S^2(s^1)$ indicate that the scenarios that can be observed in stage $t=2$ depend on scenario $s^1$ observed in stage $t=1$. Graphically, the problem would have a structure as presented in figure \ref{fig:problem_structure}.
@@ -109,7 +109,7 @@ Let us consider our 2SSP in the following form:
 
 \begin{center}
 \begin{tabular}{rccccc}
-	$\mini$ & $c^\top x$ & + $p_1 q_1^\top y_1$ & $\dots$ & + $p_{|S|} q_{|S|}^\top y_{|S|}$ &     \\
+	$\min_{x \in X, y \in Y}$ & $c^\top x$ & + $p_1 q_1^\top y_1$ & $\dots$ & + $p_{|S|} q_{|S|}^\top y_{|S|}$ &     \\
 	$\st$   & $Ax$       &                      &         &   	                           & = $b$ \\
 	        & $T_1x$     & + $W_1y_1$           &         &   	                           & = $h_1$ \\
 	        &		    &	                      & $\ddots$&                                  &    \\   
@@ -122,18 +122,18 @@ Notice that if the value of $x$ is set, the problem can be solved as a collectio
 The other type consists of \emph{complicating constraints}. To see that, let us first restate our 2SSP as 
 %
 \begin{align*}
-	\mini & \sum_s P_s\left(c^\top x_s + q_s^\top y_s\right) \\	
+	\mini_{x,y} & \sum_s P_s\left(c^\top x_s + q_s^\top y_s\right) \\	
 	\st   & Ax_s = b, \forall s \in S \\
 		  & T_s x + W_s y = h_s, \ \forall s \in S \\
-%		  & x_s \in X, \ \forall s \in S \\
-%		  & y_s \in Y_s, \forall s \in S \\
+		  & x_s \in X, \ \forall s \in S \\
+		  & y_s \in Y, \forall s \in S \\
 		  & x_1 = \dots = x_{|S|}.	
 \end{align*}
 %
 The constraint $x_1 = \dots = x_{|S|}$ is known as the \emph{nonanticipativity conditions} (NAC), since it enforces that the solution $x$ cannot anticipate which scenario may unveil. Now, notice that the structure of the 2SSP model becomes slightly different.
 
 \begin{tabular}{rccccc}
-	$\mini$ & $p_1(c_1^\top x_1 + q_q ^\top y_1)$ & $p_2(c_2^\top x_2 + q_2 ^\top y_2)$ & $\dots$ & $p_{|S|}(c_{|S|}^\top x_{|S|} + q_{|S|} ^\top y_{|S|})$ & \\
+	$\mini_{x \in X, y \in Y}$ & $p_1(c_1^\top x_1 + q_q ^\top y_1)$ & $p_2(c_2^\top x_2 + q_2 ^\top y_2)$ & $\dots$ & $p_{|S|}(c_{|S|}^\top x_{|S|} + q_{|S|} ^\top y_{|S|})$ & \\
 	$\st$ & $Ax_1$ & & & & $=b$ \\
 	& $Tx_1 + W_1y_1$& & & & $=h_1$ \\  
 	& & $Ax_2$ & & & $=b$ \\
@@ -167,24 +167,25 @@ Benders decomposition is a delayed constraint generation approach. To see how it
 %
 \begin{align*}
 	\mini_x & c^\top x + \mathcal{Q}(x) \\
-	\st   & Ax = b,	
+	\st   & Ax = b \\
+	& x \in X,
 \end{align*}
 
 where $\mathcal{Q}(x)$ is defined as
 %
 \begin{align*}
-	\mathcal{Q}(x) = \mini_y & \sum_s p_s q_s^\top y_s \\	
+	\mathcal{Q}(x) = \mini_{y \ge 0} & \sum_s p_s q_s^\top y_s \\	
 	\st & W_s y_s = h_s - T_s x, \ \forall s \in S.
 \end{align*}
 
-Notice that $\mathcal{Q}(x)$ is separable scenario-wise, i.e., can be solved separately for each $s \in S$. Now, let us consider the dual formulation of $Q(x)$.
+Notice that $\mathcal{Q}(x)$ is separable scenario-wise, i.e., can be solved separately for each $s \in S$. Now, let us consider the dual formulation of $\mathcal{Q}(x)$.
 %
 \begin{align*}
 	\mathcal{Q}(x) = \maxi_\pi & \sum_s \pi_s ^\top (h_s - T_s x) \\	
 	\st & W_s \pi_s \leq p_s q_s, \ \forall s \in S.
 \end{align*}
 
-Since we are using linear programming duality, we must require that all second-stage variables $y_s$, $\forall s \in S$, are continuous (i.e., $q = 0$). This is an assumption that can be relaxed using an alternative variant of the method \citep{LAPORTE1993}, but we will leave this discussion out for now. 
+Since we are using linear programming duality, we must require that all second-stage variables $y_s$, $\forall s \in S$, are continuous (i.e., $q = 0$ and $Y = \braces{y_s \geq 0, \forall s \in S}$). This is an assumption that can be relaxed using an alternative variant of the method \citep{LAPORTE1993}, but we will leave this discussion out for now. 
 
 Since the dual of $\mathcal{Q}(x)$ is a linear programming problem, we know that it has an equivalent representation based on a finite number of extreme points (vertices) and extreme rays. For simplicity, let us assume that we have \emph{relatively complete recourse}, meaning that $\mathcal{Q}(x)$ is feasible for any value of $x$ satisfying $Ax = b$. This allows us to preclude the treatment of extreme rays since the dual form of $\mathcal{Q}(x)$ cannot be unbounded (which is the case for an infeasible $\mathcal{Q}(x)$).
 
@@ -193,7 +194,8 @@ If we knew all extreme points $\pi^k = (\pi_s^k)_{s \in S}$, $k = 1, \dots, K$ o
 \begin{align*}
 	\mini_{x,\theta} & c^\top x + \theta \\
 	\st   & \theta \geq \sum_s (\pi_s^k)^\top (h_s - T_s x),\ k = 1, \dots, K \\
-	&Ax = b.
+	& Ax = b, \\
+	& x \in X.
 \end{align*}
 %
 Notice that this would allow us to represent the subproblem $\mathcal{Q}(x)$ as a piecewise linear function of $x$. Naturally, assuming that all extreme points $\braces{\pi^k}_{k=1,\dots,K}$ are available is not a practical assumption. However, we can iteratively generate them ``on the fly'', one at a time, and proceed to incrementally adding cuts (or constraints) of the form
@@ -212,7 +214,8 @@ The method can be summarised as follows:
 	\begin{align*}
 		M^k: \mini_{x,\theta} & c^\top x + \theta \\
 		     \st & \theta \geq \sum_s (\pi_s^l)^\top (h_s - T_s x), \ l = 1, \dots k, \\
-		     & Ax = b.	
+		     & Ax = b, \\
+		     & x \in X.	
 	\end{align*} 
 	%
 	Let $\underline{z}^k = c^\top x^k + \theta^k$, where $(x^k, \theta^k)$ are the optimal solutions of $M^k$. Make $LB = \underline{z}^k$.
@@ -222,7 +225,7 @@ The method can be summarised as follows:
 		     \st & W_s^\top \pi_s  \leq p_s q_s, \ \forall s \in S.
 	\end{align*}  
 	%
-	Let $\overline{z}^k = \sum_s (\pi_s^k)^\top (h_s - Tsx^k)$, where $(\pi_s^k)_{s \in S}$ is the optimal solution of $SP(x^k)$. Make $UB = \min\braces{UB, \overline{z}^k}$. If $UB - LB < \epsilon$, return $x^k$ as optimal solution. 
+	Let $\overline{z}^k = c^\top x^k + \sum_s (\pi_s^k)^\top (h_s - Tsx^k)$, where $(\pi_s^k)_{s \in S}$ is the optimal solution of $SP(x^k)$. Make $UB = \min\braces{UB, \overline{z}^k}$. If $UB - LB < \epsilon$, return $x^k$ as optimal solution. 
 	\item[\bf Step 4:] Make $k = k+1$. Generate constraint 
 	\begin{equation*}
 		\theta \geq \sum_s (\pi_s^k)^\top (h_s - T_s x)
@@ -236,7 +239,7 @@ Some final remarks:
 	\item In the context of stochastic programming, some people refer to this application of Benders decomposition as the L-Shaped method \citep{VANSLYKE1969}, as a reference to the block-angular structure of the problem.
 	\item It may be that the subproblem is infeasible in case the assumption concerning the relative completeness of the recourse does not hold. In this case, instead of an optimality cut, a feasibility cut of the form
 		\begin{equation*}
-			\sum_s (\pi_s^k)^\top (h_s - T_s x) \leq 0,
+			\sum_s (\pi_s^k)^\top (h_s - T_s x) \leq 0
 		\end{equation*}
 		%
  		must be generated since, in this case, $(\pi_s^k)_{s \in S}$ represents an extreme ray (or unbounded direction).
@@ -245,7 +248,8 @@ Some final remarks:
 	\begin{align*}
 		M^k_{\text{multi}}: \mini_{x,\theta} & c^\top x + \sum_s \theta_s \\
 		     \st & \theta_s \geq (\pi_s^l)^\top (h_s - T_s x), \  \forall s \in S, l = 1, \dots k, \\
-		     & Ax = b. 	
+		     & Ax = b, \\
+		     & x \in X. 	
 	\end{align*}
 	%
 	This exploits the separability of the subproblem and can be beneficial for convergence at the expense of a faster increase in the main problem size as the iterations progress, as more constraints are generated per iteration (one per scenario $s \in S$). 

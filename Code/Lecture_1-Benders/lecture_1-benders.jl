@@ -115,13 +115,14 @@ function generate_and_solve_dual_subproblem(instance, x_bar, y_bar)
     return u_bar, q_bar, r_bar, opt_value
  end
 
-# Test that the primal and dual solutions are the same
+
 @show x_bar = Int.(round.(value.(fullmodel[:x]).data))
 @show y_bar = value.(fullmodel[:y])
 
 u_bar, q_bar, r_bar, dual_obj = generate_and_solve_dual_subproblem(instance, x_bar, y_bar)
 primal_obj = generate_and_solve_primal_subproblem(instance, x_bar, y_bar)
 
+# Test that the primal and dual solutions are the same
 # This throws an error if they do not match
 @assert(primal_obj ≈ dual_obj) 
 
@@ -154,8 +155,8 @@ function benders_decomposition(ins; max_iter = 100)
     LB = -Inf
     UB = +Inf
     gap = +Inf
-    x_bar = zeros(length(ins.J))
-    y_bar = zeros(length(ins.J))
+    x_bar = zeros(length(ins.I))
+    y_bar = zeros(length(ins.I))
     
     start = time()    
     println("\nStarting Benders decomposition...\n")
@@ -186,3 +187,45 @@ end
 
 benders_decomposition(instance, max_iter = 100)
 @show obj = objective_value(fullmodel);
+
+
+
+#### Fun zone!
+
+# function generate_and_solve_dual_subproblem(instance, x_bar, y_bar, scenario)
+    
+#     I, J, S, N, P, O, V, U, T, D, bigM = unroll_instance(instance)
+     
+#     sub_dual = Model(myGurobi)
+#     set_silent(sub_dual)
+     
+#     @variable(sub_dual, u[I] <= 0)
+#     @variable(sub_dual, q[I] <= 0)
+#     @variable(sub_dual, r[J] >= 0)
+ 
+#     @constraint(sub_dual, [i in I, j in J], 
+#        u[i] + q[i] + r[j] <= P[scenario] * T[i,j]
+#     )
+#     @constraint(sub_dual, [j in J], 
+#        r[j] <= P[scenario] * U
+#     )
+#     @objective(sub_dual, Max,  
+#         sum(bigM * x_bar[i] * q[i] for i in I) +
+#         sum(y_bar[i] * u[i] for i in I) +
+#         sum(D[j,scenario] * r[j] for j in J) 
+#     )
+ 
+#     optimize!(sub_dual)
+     
+#     u_bar = value.(sub_dual[:u])
+#     q_bar = value.(sub_dual[:q])                     
+#     r_bar = value.(sub_dual[:r])                     
+#     opt_value = objective_value(sub_dual)
+     
+#     return u_bar, q_bar, r_bar, opt_value
+#  end
+
+#  for scenario in instance.S 
+#     u[:,scenario],q[:,scenario],r[:,scenario] = generate_and_solve_dual_subproblem(instance, x_bar, y_bar, scenario)
+#     ...
+#  end

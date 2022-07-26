@@ -11,8 +11,8 @@ Random.seed!(1234)
 
 struct Instance
     # sets
-    I  # Set of clients
-    J  # Set of facilities
+    I  # Set of facilities
+    J  # Set of clients
     S  # Set of scenarios
     # Parameters 
     N  # Maximum number of facilities
@@ -78,7 +78,7 @@ function generate_full_problem(instance::Instance)
     I, J, S, N, P, O, V, U, T, D, bigM = unroll_instance(instance)
 
     # Initialize model
-    m = Model(Gurobi.Optimizer)
+    m = Model(myGurobi)
     
     # Decision variables
     @variable(m, x[I], Bin)     # 1 if facility is located at i ∈ I, 0 otherwise.
