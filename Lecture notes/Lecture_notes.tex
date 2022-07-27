@@ -185,7 +185,7 @@ Notice that $\mathcal{Q}(x)$ is separable scenario-wise, i.e., can be solved sep
 	\st & W_s \pi_s \leq p_s q_s, \ \forall s \in S.
 \end{align*}
 
-Since we are using linear programming duality, we must require that all second-stage variables $y_s$, $\forall s \in S$, are continuous (i.e., $q = 0$ and $Y = \braces{y_s \geq 0, \forall s \in S}$). This is an assumption that can be relaxed using an alternative variant of the method \citep{LAPORTE1993}, but we will leave this discussion out for now. 
+Since we are using linear programming duality, we must require that all second-stage variables $y_s$, $\forall s \in S$, are continuous (i.e., $q = 0$ and the set $Y$ becomes $Y = \braces{y_s \geq 0, \forall s \in S}$). This is an assumption that can be relaxed using an alternative variant of the method \citep{LAPORTE1993}, but we will leave this discussion out for now. 
 
 Since the dual of $\mathcal{Q}(x)$ is a linear programming problem, we know that it has an equivalent representation based on a finite number of extreme points (vertices) and extreme rays. For simplicity, let us assume that we have \emph{relatively complete recourse}, meaning that $\mathcal{Q}(x)$ is feasible for any value of $x$ satisfying $Ax = b$. This allows us to preclude the treatment of extreme rays since the dual form of $\mathcal{Q}(x)$ cannot be unbounded (which is the case for an infeasible $\mathcal{Q}(x)$).
 
@@ -268,17 +268,19 @@ Now we turn our focus to a specific type of optimisation under uncertainty in wh
 \begin{align*}
 	\min_x \ & c^\top x + \max_{u \in \mathcal{U}} \min_{y} q^\top y \\
 	\st   & Ax = b \\
-	& Tx = h - Wy - Mu.
+	& Tx = h - Wy - Mu \\
+	& x \in X \\
+	& y \in Y.
 \end{align*}
 %
-As before, we have that $x \in \reals^{n} \times \braces{0,1}^p$, $y \in \reals^m \times \braces{0,1}^q$. All matrices and vectors are assumed of appropriate sizes. The set $\mathcal{U}$ is known as the \emph{uncertainty set}, which can be, e.g., a discrete set of scenarios or a polyhedral set.
+As before, we have that $X = \reals^{n}_+ \times \braces{0,1}^p$, $Y = \reals^m_+ \times \braces{0,1}^q$. All matrices and vectors are assumed of appropriate sizes. The set $\mathcal{U}$ is known as the \emph{uncertainty set}, which can be, e.g., a discrete set of scenarios or a polyhedral set.
 
-Essentially, this tri-level problem is searching for a first-stage solution that minimises the response (second-stage) cost associated with the most adverse realisation of the uncertain variable $u$ within the uncertainty set $\mathcal{U}$.
+Essentially, this tri-level problem is searching for a first-stage solution that minimises the response (second-stage) cost associated with the most adverse realisation of the uncertain variable $u$ within the uncertainty set $\mathcal{U}$. The tractability of this tri-level problem is strongly dependent on the geometry of the uncertainty set.
 
 
 \section{A min-max approach}
 
-First, let us assume that $\mathcal{U}$ is finite and discrete. Then, we can say that each element in $\mathcal{U} = \braces{u_1, \dots, u_{|S|}}$ acts as a ``scenario'', with associated set of (second-stage) variables $y_s$, $\forall s \in S = \braces{1, \dots, |S|}$.
+First, let us assume that $\mathcal{U}$ is discrete and finite. Then, we can say that each element in $\mathcal{U} = \braces{u_1, \dots, u_{|S|}}$ acts as a ``scenario'', with associated set of (second-stage) variables $y_s$, $\forall s \in S = \braces{1, \dots, |S|}$.
 
 This allows us to reformulate our problem into a deterministic equivalent form as follows.
 %
@@ -286,28 +288,29 @@ This allows us to reformulate our problem into a deterministic equivalent form a
 	\mini_x & c^\top x + \theta \\
 	\st & Ax = b \\
 	& \theta \geq q^\top y_s, \ \forall s \in S \\
-	& Tx = h - Wy_s - Mu_s, \ \forall s \in S.
+	& Tx = h - Wy_s - Mu_s, \ \forall s \in S \\
+	& x \in X.
 \end{align*}
 %
-Notice that this might still be a large-scale problem. However, we can see that if we have a method to optimally choose \emph{non-trivial (or critical) scenarios}, we can start from a subset of scenarios $S = \braces{1, \dots, r}$ and gradually augment it until convergence is observed. 
+Notice that this might still be a large-scale problem if the number of scenarios is large. On the other hand, we can see that if we have a method to optimally choose \emph{non-trivial (or critical) scenarios}, we can start from a subset of scenarios $S = \braces{1, \dots, r}$ and gradually augment it until convergence is observed. Convergence, in this setting, simply means identifying the scenario that represents the worst realisation possible, . This idea is the underpinning mechanism of applications employing column-and-constraint generation. 
 
 
 \section{Column-and-constraint generation}
 
-The column-and-constraint generation (CCG) method \citep{ZENG2013} is based on the idea of iteratively generating critical scenarios. In particular, it is designed to iteratively expand the uncertainty set $\mathcal{U}$ by identifying and including critical scenarios and generating respective recourse decisions as the algorithm progresses.
+The column-and-constraint generation (C\&CG) method \citep{ZENG2013} is based on the idea of iteratively generating critical scenarios. In particular, it is designed to iteratively expand the uncertainty set $\mathcal{U}$ by identifying and including critical scenarios and generating respective recourse decisions as the algorithm progresses.
 
 First, let us restate our problem as 
 %
 \begin{align*}
-	\mini_x & c^\top x + \mathcal{Q}(x),
+	\mini_{x \in X} & c^\top x + \mathcal{Q}(x),
 \end{align*}
 %
 where 
 \begin{equation*}
-	\mathcal{Q}(x)	 = \braces{\max_{u \in \mathcal{U}} \min_y q^\top y : Tx = h - Wy - Mu, y \in Y}.
+	\mathcal{Q}(x)	 = \braces{\max_{u \in \mathcal{U}} \min_{y \in Y} q^\top y : Tx = h - Wy - Mu}.
 \end{equation*}
 %
-Assume that we have an \emph{oracle} that can solve $\mathcal{Q}(x)$ for any given $x$ and returns an optimal solution $(y^*, u^*)$ if it exists. The CCG method can be summarised as follows.
+Assume that we have an \emph{oracle} that can solve $\mathcal{Q}(x)$ for any given $x$ and returns an optimal solution $(y^*, u^*)$ if it exists. The C\&CG method can be summarised as follows.
 
 \begin{enumerate}
 	\item[\bf Step 1:] Initialisation. $LB = -\infty$, $UB = \infty$, $k = 0$.
@@ -316,15 +319,18 @@ Assume that we have an \emph{oracle} that can solve $\mathcal{Q}(x)$ for any giv
 		M^k: \mini_{x,y,\theta} & c^\top x + \theta \\
 		& Ax = b \\
 		& \theta \geq q^\top y_l, \ l = 1, \dots, k \\
-		& Tx = h - Wy_l - M\overline{u}_l, \  l = 1, \dots, k.
+		& Tx = h - Wy_l - M\overline{u}_l, \  l = 1, \dots, k \\
+		& x \in X \\
+		& y_l \in Y, \ l = 1,\dots,k.
 	\end{align*}
 	%
 	Let $\underline{z}^k = c^\top x^k + \theta^k$, where $(x^k, \theta^k, (y_l^k)_{l=1}^k)$ form the optimal solution of $M^k$. Make $LB = \underline{z}^k$.
-	\item[\bf Step 3:] call the oracle that solves $\mathcal{Q}(x^k)$. Let $(\overline{u}^{k+1}, y^{k+1})$ be the optimal solution returned by the oracle, if it exists. Let $\overline{z}^{k} = c^\top x^k + \mathcal{Q}(x^k)$. Make  $UB = \min\braces{UB, \overline{z}^{k}}$. If $UB = LB < \epsilon$, return $x^k$ as the optimal solution.
-	\item [\bf Step 4:] if $\mathcal{Q}(x^k) < \infty$ (i.e., is feasible), create variables $y_{k+1}$ and add them to the main problem, together with the constraints
+	\item[\bf Step 3:] Call the oracle that solves $\mathcal{Q}(x^k)$. Let $(\overline{u}^{k+1}, y^{k+1})$ be the optimal solution returned by the oracle, if it exists. Let $\overline{z}^{k} = c^\top x^k + \mathcal{Q}(x^k)$. Make  $UB = \min\braces{UB, \overline{z}^{k}}$. If $UB = LB < \epsilon$, return $x^k$ as the optimal solution.
+	\item [\bf Step 4:] If $\mathcal{Q}(x^k)$ is feasible, create variables $y_{k+1}$ and add them to the main problem, together with the constraints
 	\begin{align*}
 		& \theta \geq q^\top y_{k+1} \\
-		& Tx = h - Wy_{k+1} - M\overline{u}_{k+1}
+		& Tx = h - Wy_{k+1} - M\overline{u}_{k+1} \\
+		& y_{k+1} \in Y.	
 	\end{align*}
   	to form $M^{k+1}$. Make $k = k+1$ and return to Step 2. If $\mathcal{Q}(x^k)$ is not feasible, then only the second constraint needs to be created.
 \end{enumerate}
@@ -338,17 +344,18 @@ The final part missing for having a practical algorithm is the definition of the
 	\mathcal{Q}(x)	 = &\max_u q^\top y    \\
 	   \st &u \in \mathcal{U}  \\ 	 
 		   &y \in \argmin_y q^\top y \\
-	       &\qquad \quad \st Tx = h - Wy - Mu.
+	       &\qquad \quad \st Tx = h - Wy - Mu \\
+	       &\qquad \quad \phantom{~\st} y \in Y. 
 \end{align*}
 
-Essentially, $\mathcal{Q}(x)$ is a \emph{bilevel problem} that must (in general) be reformulated into a tractable equivalent single-level problem in order to be appropriately solved. This can be achieved by employing a variety of different approaches, in which most, if not all, rely on the convexity of the lowermost problem. 
+Essentially, $\mathcal{Q}(x)$ is a \emph{bilevel problem} that must (in general) be reformulated into a tractable equivalent single-level problem in order to be appropriately solved. This can be achieved by employing a variety of different approaches in which most, if not all, rely on exposing the optimality conditions of the lowermost problem and thus, consequently, rely on the convexity of the lowermost problem. 
 
-For example, for a fixed $u \in \mathcal{U}$, assuming that $y \in \reals^m$, we can use strong duality to reformulate the inner problem, obtaining
+For example, if we assume that $Y = \reals_+^m$ for a fixed $u \in \mathcal{U}$, we can use strong duality to reformulate the inner problem, obtaining
 %
 \begin{align*}
 	\mathcal{Q}(x) = &\max_{u,\pi} (h - Tx - Mu)^\top \pi \\
-	   \st & \pi^\top W = q^\top \\
-	   	   &u \in \mathcal{U},	 
+	   \st & \pi^\top W \geq q^\top \\
+	   	   & u \in \mathcal{U},	 
 \end{align*}
 %
 which is tractable, if 
@@ -361,7 +368,7 @@ which is tractable, if
 Some final remarks: 
 
 \begin{enumerate}
-	\item The CCG method can be seen as a primal equivalent of the Benders decomposition. In fact, one can use the same idea of generating primal variables and constraints to the main problem in the context of the L-Shaped method. \citet{GAMBOA2021} show a comparison between variants of the L-Shaped method and CCG for a variant of the 2SSP problem that incorporates distributionally robustness requirements.
+	\item The C\&CG method can be seen as a primal equivalent of the Benders decomposition. In fact, one can use the same idea of generating primal variables and constraints to the main problem in the context of the L-Shaped method. \citet{GAMBOA2021} show a comparison between variants of the L-Shaped method and CCG for a variant of the 2SSP problem that incorporates distributionally robustness requirements.
 	\item Notice that convergence relies on a finiteness argument on the uncertainty set. For convergence to be guaranteed, we must require that, for example, $\mathcal{U}$ is a set of discrete elements or a polyhedral set (thus with a finite number of extreme points and rays).
 \end{enumerate}
 

@@ -1,0 +1,87 @@
+% -----------------------------------------------------------------------------
+\documentclass[a4paper]{artikel3}
+% -----------------------------------------------------------------------------
+\paperheight = 29.70 cm  \paperwidth = 21.0 cm  \hoffset        = 0.16 cm
+\headheight  =  0.81 cm  \textwidth  = 16.0 cm  \evensidemargin = 0.00 cm
+\headsep     =  0.81 cm	 \textheight = 9.00 in  \oddsidemargin  = 0.00 cm					
+% -----------------------------------------------------------------------------
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usepackage{color}
+\usepackage{fancyhdr}
+\usepackage[utf8]{inputenc}
+\usepackage[pdfpagemode  = None,
+		    colorlinks   = true,
+		    urlcolor     = blue,
+            linkcolor    = black,
+            citecolor    = black,
+            pdfstartview = FitH]{hyperref}
+% -----------------------------------------------------------------------------            
+\usepackage{enumitem}
+\setlist{align=left,topsep=0pt,itemsep=-1ex,partopsep=1ex,parsep=1ex}
+\setlist[enumerate]{topsep=0pt,leftmargin=*,labelsep=2ex,itemsep=-1ex}            
+% -----------------------------------------------------------------------------
+\input defs.tex
+% -----------------------------------------------------------------------------
+\begin{document}
+\lhead{\bf Decomposition methods for SP\&RO - Autumn 2022 (Short course)}
+\rhead{\bf Syllabus}
+\vspace{-10pt}
+
+
+\section*{Course assignments}
+
+To obtain the credit(s) from completing the course, you are requested to complete the tasks below. Please send the code for each task as independent .jl files that I can run directly. The code must be sufficiently commented, so I can understand your implementation.
+
+For the last task, make sure you contact me beforehand to let me know what paper you would like to present. In case you need help, I can point you to a suitable paper. 
+
+The deadline for all tasks is {\bf 04.09.2022}. All the assessment material must be submitted via email to fabricio.oliveira@aalto.fi. 
+
+
+\section{Task 1 - Benders decomposition}
+
+Implement the multi-cut version of the Benders decomposition. A description of the method is provided in the lecture notes, in the end of Part II. You can also consult this reference: \href{https://www.sciencedirect.com/science/article/pii/0377221788901592}{Birge and Louveaux (1988)}.
+
+Your implementation must return the same solution as that given by the single-cut version we analysed in class.
+
+ 
+\section{Task 2 - Column-and-constraint generation}
+
+Implement a column-and-constraint generation algorithm for the version of the adaptive robust problem with a discrete number of scenarios. The challenge is to think how to implement the subproblem that chooses the critical scenarios. 
+
+Your implementation must return the same solution as the scenario-based min-max problem we analysed in class.
+
+
+\section{Task 3 - Dual decomposition}
+
+Implement a version of the dual decomposition method that utilises an asymmetric representation of the nonanticipativity conditions (use the first scenario as reference). You will need to modify the Lagrangian dual function and the multiplier update methods accordingly. 
+
+Your implementation must converge to a similar bound to that observed in the implementation analysed in class.
+
+
+\section{Task 4 - Progressive hedging}
+
+Implement a modification of PH in which the penalty coefficient $\rho$ is adjusted according to the current primal and dual residuals. For that, you will first need to split the calculation of the primal ($x^k - z^k$) and dual ($z^k - z^{k-1}$) residuals separately. Then, apply the following rule.
+
+\begin{equation*}
+	\rho^{k+1} = \begin{cases}
+ 					2\rho^{k} \text{ if }||x^k - z^k||_2 > 10 ||z^k - z^{k-1}||_2  \\
+ 					0.5\rho^{k} \text{ if }||z^k - z^{k-1}||_2 > 10 ||x^k - z^k ||_2  \\
+ 					\rho^{k} \text{ otherwise.}
+ 				 \end{cases}
+\end{equation*}
+
+Notice that this is based on the logic that larger values of $\rho$ will favour smaller primal residuals. Conversely, small values of $\rho$ may favour larger dual residuals. This adjustment scheme inflates $\rho$ by 2 when the primal residual appears large compared to the dual residual and deflates $\rho$ by half when the primal residual seems too small relative
+to the dual residual.
+
+\section{Task 5 - Presentation}
+
+You must prepare a presentation of no more than 20 minutes about a paper of your choice. The presentation must consist of a collection of slides and a voice-over recording. Automated readers are not allowed.
+
+You should structure your presentation as you were presenting the paper at a conference. That is, provide an introduction, discuss the method utilised or developed and describe the main results and findings.
+
+In addition, you will be required to watch the presentations of your colleagues and propose a grade between 1-5 to each. These grades will be used to assemble the final grades given to the presentations. The grades should be provided using this spreadsheet.
+
+\end{document}
