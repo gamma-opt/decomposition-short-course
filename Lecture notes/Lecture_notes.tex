@@ -263,10 +263,10 @@ Some final remarks:
 
 \section{Introduction}
 
-Now we turn our focus to a specific type of optimisation under uncertainty in which we consider risk-averseness and robustness. A two-stage (or adaptable) robust optimisation model has the following form.
+Now we turn our focus to a specific type of optimisation under uncertainty in which we consider risk-averseness and robustness. A two-stage (or adaptable) robust optimisation model has the following form:
 %
 \begin{align*}
-	\min_x \ & c^\top x + \max_{u \in \mathcal{U}} \min_{y} q^\top y \\
+	\mini_x \ & c^\top x + \maxi_{u \in \mathcal{U}} \mini_{y} q^\top y \\
 	\st   & Ax = b \\
 	& Tx = h - Wy - Mu \\
 	& x \in X \\
@@ -282,17 +282,18 @@ Essentially, this tri-level problem is searching for a first-stage solution that
 
 First, let us assume that $\mathcal{U}$ is discrete and finite. Then, we can say that each element in $\mathcal{U} = \braces{u_1, \dots, u_{|S|}}$ acts as a ``scenario'', with associated set of (second-stage) variables $y_s$, $\forall s \in S = \braces{1, \dots, |S|}$.
 
-This allows us to reformulate our problem into a deterministic equivalent form as follows.
+This allows us to reformulate our problem into a deterministic equivalent form as follows:
 %
 \begin{align*}
 	\mini_x & c^\top x + \theta \\
 	\st & Ax = b \\
 	& \theta \geq q^\top y_s, \ \forall s \in S \\
 	& Tx = h - Wy_s - Mu_s, \ \forall s \in S \\
-	& x \in X.
+	& x \in X \\
+	& y_s \in Y, \ \forall s \in S.
 \end{align*}
 %
-Notice that this might still be a large-scale problem if the number of scenarios is large. On the other hand, we can see that if we have a method to optimally choose \emph{non-trivial (or critical) scenarios}, we can start from a subset of scenarios $S = \braces{1, \dots, r}$ and gradually augment it until convergence is observed. Convergence, in this setting, simply means identifying the scenario that represents the worst realisation possible, . This idea is the underpinning mechanism of applications employing column-and-constraint generation. 
+This formulation is known in the context of stochastic programming as the min-max or mini-max formulation. Notice that this might still be a large-scale problem if the number of scenarios is large. On the other hand, we can see that if we have a method to optimally choose \emph{non-trivial (or critical) scenarios}, we can start from a subset of scenarios $S = \braces{1, \dots, r}$ and gradually augment it until convergence is observed. Convergence, in this setting, simply means identifying the scenario that represents the worst realisation possible. This idea is the underpinning mechanism of applications employing column-and-constraint generation. 
 
 
 \section{Column-and-constraint generation}
@@ -354,21 +355,21 @@ For example, if we assume that $Y = \reals_+^m$ for a fixed $u \in \mathcal{U}$,
 %
 \begin{align*}
 	\mathcal{Q}(x) = &\max_{u,\pi} (h - Tx - Mu)^\top \pi \\
-	   \st & \pi^\top W \geq q^\top \\
+	   \st & \pi^\top W \leq q^\top \\
 	   	   & u \in \mathcal{U},	 
 \end{align*}
 %
 which is tractable, if 
 \begin{enumerate}
 	\item $u$ is integer or has a discrete domain, since $u^\top \pi$ can be reformulated exactly;
-	\item if $M$ is positive semi-definite, since we would be maximising a concave quadratic function;
+	\item if $-(Mu)^\top \pi + (h - Tx)^\top \pi$ is a concave bilinear function in $\pi$ and $u$;
 	\item if applying spatial branch-and-bound (e.g., Gurobi's spatial branch-and-bound method) is feasible from a computational standpoint.	
 \end{enumerate}
 
 Some final remarks: 
 
 \begin{enumerate}
-	\item The C\&CG method can be seen as a primal equivalent of the Benders decomposition. In fact, one can use the same idea of generating primal variables and constraints to the main problem in the context of the L-Shaped method. \citet{GAMBOA2021} show a comparison between variants of the L-Shaped method and CCG for a variant of the 2SSP problem that incorporates distributionally robustness requirements.
+	\item The C\&CG method can be seen as a primal equivalent of the Benders decomposition. In fact, one can use the same idea of generating primal variables and constraints to the main problem in the context of the L-Shaped method. 
 	\item Notice that convergence relies on a finiteness argument on the uncertainty set. For convergence to be guaranteed, we must require that, for example, $\mathcal{U}$ is a set of discrete elements or a polyhedral set (thus with a finite number of extreme points and rays).
 \end{enumerate}
 
@@ -378,11 +379,10 @@ Some final remarks:
 
 \section{Introduction}
 
-We now consider an alternative framework for decomposition, which is based on more general Lagrangian duality. In contrast with Benders decomposition, Lagrangian decomposition does not require convexity of the subproblem for converging, but only of its \emph{linear relaxation}. This is why these methods are often seen as better suited for stochastic mixed-integer programming problems. 
+We now consider an alternative framework for decomposition, which is based on more general Lagrangian duality results. In contrast with Benders decomposition, Dual decomposition does not require convexity of the subproblem for converging, but only of its \emph{linear relaxation}. This is why these methods are often seen as better suited for stochastic mixed-integer programming problems. However, dual decomposition is based on a branch-and-bound approach, meaning that it is somewhat more challenging to be implemented. We will focus on the bounding part of dual decomposition, which uses Lagrangian decomposition \citep{GUIGNARD1987}, a variant of Lagrangian relaxation that yields provably better bounds.
 
-\textbf{Remark:} the above is not entirely true. Since the 90's (see Laporte and Louveaux 1993), there have been developments that allow for the employment of Benders (or the L-Shaped method) to problems with integer variables in the second stage.
+One truly remarkable feature of Lagrangian decomposition approaches is their amenability to parallelisation. Before we discuss this aspect in more detail, let us first describe the method.
 
-One truly remarkable feature of Lagrangian decomposition approaches is their amenability to parallelisation. Before we discuss this aspect in more details, let us first describe the method.
 
 \section{A reformulations strategy}
 
@@ -393,7 +393,7 @@ As we discussed earlier, Lagrangian decomposition is suited for obtaining separa
 	\st   & Ax = b \\
 	& T_s x + W_s y_s = h_s, \ \forall s \in S \\
 	& x \in X \\
-	& y_s \in Y_s \ \forall s \in S.	
+	& y_s \in Y \ \forall s \in S.	
 \end{align*}
 
 As we discussed earlier, the complicating structure is associated with the first-stage variables $x$. Thus, in order to expose the complicating structure by means of constraints, we have to perform the following reformulation.
@@ -403,20 +403,20 @@ As we discussed earlier, the complicating structure is associated with the first
 	\st & Ax_s = b, \ \forall s \in S \\
 	& Tsx_s + W_sy_s = h_s, \ \forall s \in S \\
 	& x_s \in X, \ \forall s \in S \\
-	& y_s \in Y_s, \ \forall s \in S \\
+	& y_s \in Y, \ \forall s \in S \\
 	& x_1 = x_2 = \dots = x_{|S|}. 
 \end{align*}
 %
 In effect, this reformulation is based on generating copies of the first-stage variable $x_s$, one for each scenario $s \in S$, that are then connected via the constraint $x_1 = x_2 = \dots = x_{|S|}$. This constraint is known as the \emph{nonanticipativity conditions} (NAC), meaning that it prevents the first-stage decision $x$ from anticipating a specific scenario.
 
-Specifically, nonanticipativity constraints can have several forms. Some examples:
+Specifically, nonanticipativity constraints can have several forms. For examples, they can have a
 %
 \begin{enumerate}
-	\item symmetric: $x_s = x_{s+1}$, for $s \in \braces{1,\dots,|S|-1}$.
-	\item asymmetric: $x_{\overline{s}} = x_{s}$, for $s \in S \setminus {\overline{s}}$.
+	\item symmetric form: $x_s = x_{s+1}$, for $s \in \braces{1,\dots,|S|-1}$.
+	\item asymmetric form: $x_{\overline{s}} = x_{s}$, for $s \in S \setminus {\overline{s}}$.
 \end{enumerate}
  %
- As one might suspect, since the representation of the NACs is not unique, different options might have different impacts on the observed performance of the algorithm.
+ As one might suspect, since the representation of the NACs is not unique, different options might have different impacts on the observed performance of the algorithm. In \citet{OLIVEIRA2013}, we discuss an application in which the choice of the representation significantly impacts the performance of the method.
  
 
 \section{Using Lagrangian relaxation to obtain a decomposition}
@@ -424,14 +424,14 @@ Specifically, nonanticipativity constraints can have several forms. Some example
 One can notice that, once the nonanticipativity conditions are removed, the problem can be decomposed scenario-wise. In what follows, let us assume that we adopt the asymmetric representation of the NAC. Then, employing Lagrangian relaxation to the NAC yield the \emph{Lagrangian function}
 %
 \begin{align*}
-	L(\lambda) = \mini & \sum_s p_s (c^\top x_s + q_s ^\top y_s) + \sum_s \lambda_s g_s \\
+	L(\lambda) = \mini & \sum_s p_s (c^\top x_s + q_s ^\top y_s) + \sum_s \lambda_s^\top g_s \\
  	\st & Ax_s = b, \ \forall s \in S \\
- 	& T_sx_s + W_sy_s = h_s, \ \forall s ín S \\
+ 	& T_sx_s + W_sy_s = h_s, \ \forall s \in S \\
  	& x_s \in X, \ \forall s \in S \\
- 	& y_s \in Y_s, \ \forall s \in S, 
+ 	& y_s \in Y, \ \forall s \in S, 
 \end{align*}
 %
-where $g_s = x_{\overline{s}} - x_s$, $\forall s \in S \setminus \{\overline{s}\}$. Notice that the Lagrangian function is completely separable scenario-wise. To see that, we can redefine it as
+where $g_s = x_{\overline{s}} - x_s$, $\forall s \in S \setminus \{\overline{s}\}$ and $\overline{s}$ is a reference scenario. Notice that the Lagrangian function is completely separable scenario-wise. To see that, we can redefine it as
 %
 \begin{equation*}
 	L(\lambda) = \sum_s L_s(\lambda),	
@@ -440,19 +440,19 @@ where $g_s = x_{\overline{s}} - x_s$, $\forall s \in S \setminus \{\overline{s}\
 where $L_s(\lambda)$ is given by
 %
 \begin{align*}
-	L(\lambda) = \mini & \sum_s p_s (c^\top x_s + q_s ^\top y_s) + \sum_s \lambda_s f_s(\lambda)x_s \\
+	L_s(\lambda) = \mini & p_s (c^\top x_s + q_s ^\top y_s) + f_s(\lambda)^\top x_s \\
  	\st & Ax_s = b \\
  	& T_sx_s + W_sy_s = h_s \\
  	& x_s \in X \\ 
- 	& y_s \in Y_s  
+ 	& y_s \in Y  
 \end{align*}
 %
 with $f_s(\lambda)$ simply being
 \begin{equation*}
 	f_s(\lambda) = 
 	\begin{cases}
-		\sum_{s \in S \setminus \{\overline{s}\}} \lambda_s, \text{ if } s = \overline{s} \\
-		-\lambda_s, \text{ otherwise.}	
+		\sum_{s \in S \setminus \{\overline{s}\}} \lambda_s, &\text{ if } s = \overline{s} \\
+		-\lambda_s, &\text{ otherwise.}	
 	\end{cases}
 \end{equation*}
 
@@ -467,10 +467,10 @@ The theoretical framework under which this idea is developed is known as \emph{L
 Lagrangian duality-based methods typically employ optimisation to find the best possible bound provided by $L(\lambda)$, which can be obtained solving the \emph{Lagrangian dual problem}
 %
 \begin{equation*}
-	\max_\lambda L(\lambda).
+	\maxi_\lambda L(\lambda).
 \end{equation*}
 %
-Under convexity and a constraint qualification condition\footnote{Conditions that, once satisfied by a constraint set, allow for creating a link between Karush-Kuhn-Tucker conditions and optimality of a feasible point.}, it can be shown that
+Under convexity and a constraint qualification condition\footnote{Conditions that once satisfied by a constraint set allow for creating a link between Karush-Kuhn-Tucker conditions and optimality of a feasible point.}, it can be shown that
 %
 \begin{equation*}
 	\max_\lambda L(\lambda) = z^*.
@@ -480,22 +480,11 @@ The strongest selling point of Lagrangian decomposition methods is that, for eac
 
 \section{Solving the Lagrangian dual}
 
-The Lagrangian dual problem is, in essence, a bi-level problem and, thus, require specific solution techniques. For linear 2SSP models, and more generally general for any other problem, the Lagrangian dual problem is a piecewise linear concave function. This means that a nonsmooth optimisation problem must be employed to solve it. The most common methods are:
-
-\begin{itemize}
-	\item subgradient method;
-	\item cutting plane method;
-	\item bundle methods.
-\end{itemize}
-
-We will discuss in more detail the subgradient method.
-
+The Lagrangian dual problem is, in essence, a non-differentiable bi-level problem and, thus, requires specific solution techniques. For linear 2SSP models following our representation, the Lagrangian dual problem is a piecewise linear concave function. This means that a nonsmooth optimisation method must be employed to solve it.
 
 \subsection{The subgradient method}
 
-The subgradient method is based on the idea of successively taking ascending subgradient steps in the space of the Lagrangian dual variables. 
-
-The subgradient is a generalisation of the gradient for non-differentiable functions. In our particular case, $g_s$, $\forall s \in S$ is a subgradient for $L_s(\lambda)$. As we would like to maximise $L(\lambda)$, we can take steps of the form
+The subgradient method is based on the idea of successively taking ascending subgradient steps in the space of the Lagrangian dual variables. The subgradient is a generalisation of the gradient for non-differentiable functions. In our particular case, $g_s$, $\forall s \in S$, is a subgradient for $L_s(\lambda)$. As we would like to maximise $L(\lambda)$, we can take steps of the form
 %
 \begin{equation*}
 	\lambda_s^{k+1} = \lambda_s^{k} + \mu^k g^k_s, \ \forall s \in S,
@@ -504,15 +493,89 @@ The subgradient is a generalisation of the gradient for non-differentiable funct
 where $k$ is an iteration counter and $\mu^k_s$ is a step size. There are multiple alternative ways to define the step-size term, many of them drawing from techniques used in variants of the gradient/ steepest descent method. One common update rule is that known as the \emph{Polyak} rule, which is given by
 %
 \begin{equation*}
-	\mu^k = \alpha_k \frac{\overline{z} - L(\lambda^k)}{||(g_s)_{s \in S}||^2},	
+	\mu^k = \alpha_k \frac{\overline{z} - L(\lambda^k)}{||(g_s)_{s \in S}||_2^2},	
 \end{equation*}
 %
-where $\overline{z}$ is an upper bound on the optimal solution of the 2SSP $z^*$, $L(\lambda^k)$ is the value of the Lagrangian dual function, evaluated at iteration $k$. 
+where $\alpha^k \in (0, 2]$ and is such that $\alpha_k \rightarrow 0$ as $k \rightarrow \infty$ and $\sum_k alpha_k \rightarrow \infty$ as $k \rightarrow \infty$; $\overline{z}$ is an upper bound on the optimal solution of the 2SSP $z^*$ and $L(\lambda^k)$ is the value of the Lagrangian dual function, evaluated at iteration $k$. 
 
+
+\subsection{Cutting-planes}
+
+An alternative approach consists of exploiting the min-max structure of the Lagrangian dual problem and the concave piecewise linear nature of the Lagrangian dual function in terms of the Langrangian dual multipliers $\lambda$.
+
+Notice that we are interested in solving the following problem:
+%
+\begin{align*}
+	\maxi_{\lambda} \mini_{x,y}	\left\{\sum_s p_s(c^\top x_s + q_s^\top y_s) + \lambda_s^\top g_s : Ax_s = b, T_sx_s + W_sy_s = h_s, x_s \in X, y_s \in Y, \ \forall s \in S\right\}
+\end{align*}
+%
+Assume for a moment that all extreme points $K$ of the inner problem are known (assumed bounded for simplicity) Then, the Lagrangian dual problem can be reformulated as
+%
+\begin{align*}
+	\maxi_{\theta, \lambda} & \theta \\
+	\st & \theta \leq \sum_s \left[p_s (c^\top x_s^k + q_s^\top y_s^k)+  \lambda_s^\top g_s^k \right], \ k = 1, \dots, K.			
+\end{align*}
+% 
+Since $K$ is most likely a large number and enumerating all vertices is not practical, we can employ a delayed constraint generation strategy in a similar fashion to Benders decomposition.
+
+{\bf Remark:} in general, for a Lagrangian dual function $\phi(\lambda)$, the cutting plane representing a local linearisation is of the form
+\begin{equation*}
+	\theta \leq \phi(\lambda^k) + (g^k)^\top(\lambda - \lambda^k). 	
+\end{equation*}
+
+
+
+\subsection{Bundle method}
+
+One drawback of the cutting-plane method is the fact that in the early iterations, we rely on a poor approximation of the Lagrangian function, which in turn may lead to poor Lagrangian dual multipliers. This vicious cycle tends to last for a while in practice and may compromise the performance of the method.
+
+To alleviate this, the bundle method employs two complementary mechanisms. The first consists of penalising solutions that stray too far from a reference solution $\overline{\lambda}$, known as the \emph{centre of gravity}. This acts as a soft trust region and can mitigate the ``bouncing effect'' of the Lagrangian dual multipliers, a feature that is characteristic of cutting plane methods in their early iterations.
+
+The second mechanism is the notion of a \emph{serious step}. A serious step consists of an update of the centre of gravity, which is only performed provided that the difference between the evaluation of a reference point on the original function and the current approximation is within a pre-specified threshold. Otherwise, the method takes a \emph{null step}, meaning that further improvement of the current approximation of the function is required before the Lagrangian dual multipliers are updated.
+
+More precisely, at iteration $k$ of the bundle method, the Lagrangian dual multipliers are updated by solving the Lagrangian dual subproblem:
+%
+\begin{align*}
+	\maxi_{\theta, \lambda} & \theta - \alpha ||\lambda - \overline{\lambda}^k||_2^2\\
+	\st & \theta \leq \sum_s \left[p_s (c^\top x_s^l + q_s^\top y_s^l)+  \lambda_s^\top g_s^l \right], \ l = 1, \dots, k,			
+\end{align*}
+%
+where $\overline{\lambda}^k$ represents the centre of gravity at iteration $k$ and $\alpha$ is a penalisation for deviating from $\overline{\lambda}^k$. Now, to understand the logic behind the serious step update, let us first discuss how we can assess the quality of our working representation of the Lagrangian dual function, which, at iteration $K$ is composed by a \emph{bundle} of hyperplanes of the form
+%
+\begin{equation*}
+	\theta \leq \sum_s \left[p_s (c^\top x_s^l + q_s^\top y_s^l)+  \lambda_s^\top g_s^l \right], \ l = 1, \dots, k
+\end{equation*}
+%
+and for which $(\theta^{k}, \lambda^{k})$ represents an optimal solution. Notice that $\theta^k$ represents the value of the Lagrangian dual function approximation at $\lambda^k$, our current \emph{trial point}. A trial point will be allowed to become the current centre of gravity if the difference between the value of the Lagrangian dual function approximation at the trial point $\lambda^k$ and the Lagrangian dual function evaluated at the centre of gravity $\overline{\lambda}^k$, $L(\overline{\lambda}^k)$, is within a fraction of the difference between the Lagrangian dual function evaluated both at $\lambda^k$, $L(\lambda^k)$, and $L(\overline{\lambda}^k)$.
+
+More precisely, we know that the following holds in general:
+%
+\begin{equation*}
+	\theta - L(\overline{\lambda}^k) \geq L(\lambda^k) -  L(\overline{\lambda}^k),
+\end{equation*}
+%
+as $\theta \geq L(\lambda^k)$, recalling that if we had all $K$ cuts generated, they would otherwise match. Therefore, if we consider the ratio
+%
+\begin{equation*}
+	\frac{L(\lambda^k) -  L(\overline{\lambda}^k)}{\theta - L(\overline{\lambda}^k)},
+\end{equation*}
+%
+we can have an indication of how precise the approximation currently is since the closer this ratio is to one, the closer the values $\theta^k$ and $L(\lambda^k)$ are. 
+
+The serious step rule consists of checking at each iteration whether the fraction is at least a prespecified value $m$, and if so, the centre of gravity is updated with the current iterate $\lambda^k$. Specifically,
+\begin{equation*}
+	\overline{\lambda}^{k+1} = 
+	\begin{cases}
+		\lambda^{k+1}, &\text{ if } \frac{L(\lambda^k) -  L(\overline{\lambda}^k)}{\theta - L(\overline{\lambda}^k)} \geq m \\
+		\overline{\lambda}^{k}, &\text{ otherwise. }
+	\end{cases}
+\end{equation*}
+
+{\bf Remark:} Bundle methods are known for being sensitive to the parametrisation of $\alpha$ and $m$, but are known for having a more robust practical convergence in the context of Lagrangian decomposition. Moreover, the method can be employed in other contexts as well as a means to solve more general (e.g., convex nonlinear) constrained optimisation problems.
 
 \section{Dual decomposition (DD) method}
 
-The DD method can be summarised as follows
+The DD method can be summarised as follows:
 
 \begin{enumerate}
 	\item[\bf Step 1:] Initialisation. $LB = \infty$, $k=0$, $\lambda^k = \overline{\lambda}$.

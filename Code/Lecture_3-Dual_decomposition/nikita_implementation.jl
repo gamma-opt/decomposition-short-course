@@ -208,13 +208,13 @@ function lagrangian_decomposition(ins; max_iter = 200)
 
     # Bundle method related parameters
  
-    CG = Array{Array{Float64}}(undef, max_iter)    # centre of gravity 
-    DV_CG = Array{Float64}(undef, max_iter) # dual function value at the centre of gravity 
+    CG = Array{Array{Float64}}(undef, max_iter)        # centre of gravity 
+    DV_CG = Array{Float64}(undef, max_iter)            # dual function value at the centre of gravity 
     cutting_plane_OV = Array{Float64}(undef, max_iter) #cutting plane subproblem objective value
 
     # Parameters values for the parameters of the Bundle method
-    m = 0.6
-    d = 100.0
+    m = 0.3
+    d = 2000.0
     
     dual_sub = generate_dual_subproblem(ins)
 
@@ -224,8 +224,8 @@ function lagrangian_decomposition(ins; max_iter = 200)
     # set_optimizer_attribute(cutting_plane_subproblem, "print_level", 0)
     set_silent(cutting_plane_subproblem)
     @variables cutting_plane_subproblem begin
-        z
-        lagrangian_multipliers_representing_variable[ 1:2*length(ins.I), 1:length(ins.S)]
+        z  # θ
+        lagrangian_multipliers[ 1:2*length(ins.I), 1:length(ins.S)] #combined λ and μ, hence 2
     end
 
     start = time()    
@@ -234,7 +234,8 @@ function lagrangian_decomposition(ins; max_iter = 200)
         
         x_s, y_s, LB_k, CG_k = generate_and_solve_lagrangian_subproblem(ins, λ_k, μ_k)  
 
-        LB = max(LB_k, LB) 
+        # LB = max(LB_k, LB) 
+        LB = LB_k
 
         if k%10 == 0 
             UB_k =  0.0 # lagrangian_heuristic(ins, x_s, y_s)
@@ -269,11 +270,12 @@ function lagrangian_decomposition(ins; max_iter = 200)
             # Making decision regarding NULL step or serious step 
             if k == 1
                 CG[k] = [λ_k; μ_k]
-                DV_CG[k] = LB
-            elseif LB - DV_CG[k-1] >=  m * ((cutting_plane_OV[k-1] + d * sum( norm([λ_k; μ_k][:, s] - CG[k-1][:,s])^2 for s = 1:length(ins.S))) - DV_CG[k-1])
+                DV_CG[k] = LB_k
+            #elseif LB - DV_CG[k-1] >=  m * ((cutting_plane_OV[k-1] + d * sum( norm([λ_k; μ_k][:, s] - CG[k-1][:,s])^2 for s = 1:length(ins.S))) - DV_CG[k-1])
+            elseif LB_k - DV_CG[k-1] >=  m * (cutting_plane_OV[k-1] - DV_CG[k-1])
                 # serious step
                 CG[k] = [λ_k; μ_k]
-                DV_CG[k] = LB
+                DV_CG[k] = LB_k
                 print("Serious Step\n")
             else 
                 #null step
@@ -283,10 +285,10 @@ function lagrangian_decomposition(ins; max_iter = 200)
 
             
             #reformulating cutting plabe subproblem
-            @objective(cutting_plane_subproblem, Max, cutting_plane_subproblem[:z] - d * sum(  sum((cutting_plane_subproblem[:lagrangian_multipliers_representing_variable][:, s] .- CG[k][:,s]).^2 ) for  s in 1 : length(ins.S) ) )
+            @objective(cutting_plane_subproblem, Max, cutting_plane_subproblem[:z] - d * sum(  sum((cutting_plane_subproblem[:lagrangian_multipliers][:, s] .- CG[k][:,s]).^2 ) for  s in 1 : length(ins.S) ) )
             
             #adding cut 
-            @constraint(cutting_plane_subproblem, cutting_plane_subproblem[:z]  <= DV_CG[k] + sum( sum( [gx[:, s]; gy[:, s]] .* ( cutting_plane_subproblem[:lagrangian_multipliers_representing_variable][:, s] .- [λ_k; μ_k][:, s] ) ) for s = 1 :  length(ins.S) ) )
+            @constraint(cutting_plane_subproblem, cutting_plane_subproblem[:z]  <= DV_CG[k] + sum( sum( [gx[:, s]; gy[:, s]] .* ( cutting_plane_subproblem[:lagrangian_multipliers][:, s] .- [λ_k; μ_k][:, s] ) ) for s = 1 :  length(ins.S) ) )
            
             optimize!(cutting_plane_subproblem)
             #show CG
@@ -296,8 +298,8 @@ function lagrangian_decomposition(ins; max_iter = 200)
 
 
             for s = 1:length(ins.S)
-                λ_k[:,s] = value.(cutting_plane_subproblem[:lagrangian_multipliers_representing_variable])[1:length(ins.I), s]
-                μ_k[:,s] = value.(cutting_plane_subproblem[:lagrangian_multipliers_representing_variable])[length(ins.I)+1:2*length(ins.I), s]
+                λ_k[:,s] = value.(cutting_plane_subproblem[:lagrangian_multipliers])[1:length(ins.I), s]
+                μ_k[:,s] = value.(cutting_plane_subproblem[:lagrangian_multipliers])[length(ins.I)+1:2*length(ins.I), s]
             end
 
             cutting_plane_OV[k] = value.(cutting_plane_subproblem[:z])
@@ -310,7 +312,7 @@ function lagrangian_decomposition(ins; max_iter = 200)
 
             # tunning the stepsize (d)
             # if (k>0)   d = 10000.0 end
-            # if (k>100) d = 1000.0 end
+            # if (k>100) d = 100.0 end
             # if (k>160) d = 100.0 end 
             # if (k>350) d = 10.0 end
             # if (k>400) d = 1.0 end
@@ -324,4 +326,4 @@ function lagrangian_decomposition(ins; max_iter = 200)
 end
 
 
-x_s, y_s, LB = lagrangian_decomposition(instance, max_iter=500)
+x_s, y_s, LB = lagrangian_decomposition(instance, max_iter=200)

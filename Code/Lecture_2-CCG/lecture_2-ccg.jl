@@ -12,12 +12,12 @@ expected_value_model = generate_full_problem(instance)
 optimize!(expected_value_model)
 
 # Generating the scenario-based min-max
-function generate_full_minimax_problem(instance::Instance; solver=Gurobi)
+function generate_full_minimax_problem(instance::Instance)
     
     I, J, S, N, P, O, V, U, T, D, bigM = unroll_instance(instance)
 
     # Initialize model
-    m = Model(solver.Optimizer)
+    m = Model(myGurobi)
     
     # Decision variables
     @variable(m, x[I], Bin)     # 1 if facility is located at i ∈ I, 0 otherwise.
@@ -192,7 +192,7 @@ function generate_and_solve_linearized_subproblem(instance, x_bar, y_bar, Γ)
     
     I, J, S, N, P, O, V, U, T, D, bigM, D_average, D_deviation = unroll_instance(instance)
      
-    sub_dual = Model(()->Gurobi.Optimizer(GRB_ENV)) 
+    sub_dual = Model(myGurobi) 
     set_silent(sub_dual)
      
     #%
@@ -292,7 +292,7 @@ function generate_and_solve_bilevel_subproblem(instance, x_bar, y_bar, Γ)
    return d_bar, opt_value
  end
 
- function cc_decomposition(ins; max_iter = 100, Γ = 10, sub_method = :linear)
+ function cc_decomposition(ins; max_iter = 10, Γ = 10, sub_method = :linear)
     k = 1
     ϵ = 1e-4
     LB = -Inf
@@ -345,9 +345,9 @@ function generate_and_solve_bilevel_subproblem(instance, x_bar, y_bar, Γ)
     println("Maximum number of iterations exceeded.")
 end
 
-@time x_bar, y_bar, UB = cc_decomposition(instance, max_iter = 5, Γ = 5, sub_method = :linear)
-@time x_bar, y_bar, UB = cc_decomposition(instance, max_iter = 5, Γ = 5, sub_method = :dual)
-@time x_bar, y_bar, UB = cc_decomposition(instance, max_iter = 5, Γ = 5, sub_method = :bilevel)
+@time x_bar, y_bar, UB = cc_decomposition(instance, max_iter = 10, Γ = 5, sub_method = :linear)
+@time x_bar, y_bar, UB = cc_decomposition(instance, max_iter = 10, Γ = 5, sub_method = :dual)
+@time x_bar, y_bar, UB = cc_decomposition(instance, max_iter = 10, Γ = 5, sub_method = :bilevel)
 
 UB_k = []
 for i in 1:15
