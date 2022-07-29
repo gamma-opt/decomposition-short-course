@@ -39,7 +39,7 @@ function generate_instance(TotalServers, TotalClients, TotalScenarios)
     P = [1/TotalScenarios for s in S]      # All scenarios have equal probability
     O = [rand(40:80) for i in I]           # Fixed cost for locating facility
     V = [rand(1:10) for i in I]            # Variable capacity cost   
-    U = 100                                # High cost for unmet demand
+    U = 500                                # High cost for unmet demand
     loc_i = [(rand(), rand()) for i in I]  # Random 2D-coordinates for clients (coordinates are represented by a tuple)
     loc_j = [(rand(), rand()) for j in J]  # Random 2D-coordinates for servers
     

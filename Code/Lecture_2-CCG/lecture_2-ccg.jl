@@ -2,8 +2,8 @@ using BilevelJuMP
 
 include("$(pwd())/instance_generation.jl")
 
-TotalFacilities = 5
-TotalClients = 10
+TotalFacilities = 10
+TotalClients = 30
 TotalScenarios = 50
 
 # Solving the full space problem for reference
@@ -93,7 +93,7 @@ function generate_main(instance)
     @constraint(main, sum(x[i] for i in I) <= N)
     
     @objective(main, Min, sum(O[i] * x[i] + V[i] * y[i] for i in I) + θ)
-
+    println(main)
     return main  
 end
 
@@ -346,7 +346,7 @@ function generate_and_solve_bilevel_subproblem(instance, x_bar, y_bar, Γ)
 end
 
 @time x_bar, y_bar, UB = cc_decomposition(instance, max_iter = 10, Γ = 5, sub_method = :linear)
-@time x_bar, y_bar, UB = cc_decomposition(instance, max_iter = 10, Γ = 5, sub_method = :dual)
+# @time x_bar, y_bar, UB = cc_decomposition(instance, max_iter = 10, Γ = 5, sub_method = :dual)
 @time x_bar, y_bar, UB = cc_decomposition(instance, max_iter = 10, Γ = 5, sub_method = :bilevel)
 
 UB_k = []

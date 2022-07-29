@@ -496,7 +496,7 @@ where $k$ is an iteration counter and $\mu^k_s$ is a step size. There are multip
 	\mu^k = \alpha_k \frac{\overline{z} - L(\lambda^k)}{||(g_s)_{s \in S}||_2^2},	
 \end{equation*}
 %
-where $\alpha^k \in (0, 2]$ and is such that $\alpha_k \rightarrow 0$ as $k \rightarrow \infty$ and $\sum_k alpha_k \rightarrow \infty$ as $k \rightarrow \infty$; $\overline{z}$ is an upper bound on the optimal solution of the 2SSP $z^*$ and $L(\lambda^k)$ is the value of the Lagrangian dual function, evaluated at iteration $k$. 
+where $\alpha^k \in (0, 2]$ and is such that $\alpha_k \rightarrow 0$ as $k \rightarrow \infty$ and $\sum_k \alpha_k \rightarrow \infty$ as $k \rightarrow \infty$; $\overline{z}$ is an upper bound on the optimal solution of the 2SSP $z^*$ and $L(\lambda^k)$ is the value of the Lagrangian dual function, evaluated at iteration $k$. 
 
 
 \subsection{Cutting-planes}
@@ -518,7 +518,7 @@ Assume for a moment that all extreme points $K$ of the inner problem are known (
 % 
 Since $K$ is most likely a large number and enumerating all vertices is not practical, we can employ a delayed constraint generation strategy in a similar fashion to Benders decomposition.
 
-{\bf Remark:} in general, for a Lagrangian dual function $\phi(\lambda)$, the cutting plane representing a local linearisation is of the form
+{\bf Remark:} in general, for a Lagrangian dual function $\phi(\lambda)$, the cutting plane representing a local first-order approximation is of the form
 \begin{equation*}
 	\theta \leq \phi(\lambda^k) + (g^k)^\top(\lambda - \lambda^k). 	
 \end{equation*}
@@ -533,36 +533,28 @@ To alleviate this, the bundle method employs two complementary mechanisms. The f
 
 The second mechanism is the notion of a \emph{serious step}. A serious step consists of an update of the centre of gravity, which is only performed provided that the difference between the evaluation of a reference point on the original function and the current approximation is within a pre-specified threshold. Otherwise, the method takes a \emph{null step}, meaning that further improvement of the current approximation of the function is required before the Lagrangian dual multipliers are updated.
 
-More precisely, at iteration $k$ of the bundle method, the Lagrangian dual multipliers are updated by solving the Lagrangian dual subproblem:
+More precisely, at iteration $k$ of the bundle method, the Lagrangian dual multipliers are updated by solving the penalised Lagrangian dual subproblem:
 %
 \begin{align*}
-	\maxi_{\theta, \lambda} & \theta - \alpha ||\lambda - \overline{\lambda}^k||_2^2\\
+	M^k = \maxi_{\theta, \lambda} & \theta - \alpha ||\lambda - \overline{\lambda}^k||_2^2\\
 	\st & \theta \leq \sum_s \left[p_s (c^\top x_s^l + q_s^\top y_s^l)+  \lambda_s^\top g_s^l \right], \ l = 1, \dots, k,			
 \end{align*}
 %
-where $\overline{\lambda}^k$ represents the centre of gravity at iteration $k$ and $\alpha$ is a penalisation for deviating from $\overline{\lambda}^k$. Now, to understand the logic behind the serious step update, let us first discuss how we can assess the quality of our working representation of the Lagrangian dual function, which, at iteration $K$ is composed by a \emph{bundle} of hyperplanes of the form
+where $\overline{\lambda}^k$ represents the centre of gravity at iteration $k$ and $\alpha$ is a penalisation coefficient for deviating from $\overline{\lambda}^k$. Now, to understand the logic behind the serious step update, let us first discuss how we can assess the quality of our working representation of the Lagrangian dual function, which, at iteration $k$ is composed by a \emph{bundle} of hyperplanes of the form
 %
 \begin{equation*}
 	\theta \leq \sum_s \left[p_s (c^\top x_s^l + q_s^\top y_s^l)+  \lambda_s^\top g_s^l \right], \ l = 1, \dots, k
 \end{equation*}
 %
-and for which $(\theta^{k}, \lambda^{k})$ represents an optimal solution. Notice that $\theta^k$ represents the value of the Lagrangian dual function approximation at $\lambda^k$, our current \emph{trial point}. A trial point will be allowed to become the current centre of gravity if the difference between the value of the Lagrangian dual function approximation at the trial point $\lambda^k$ and the Lagrangian dual function evaluated at the centre of gravity $\overline{\lambda}^k$, $L(\overline{\lambda}^k)$, is within a fraction of the difference between the Lagrangian dual function evaluated both at $\lambda^k$, $L(\lambda^k)$, and $L(\overline{\lambda}^k)$.
+and for which $(\theta^{k}, \lambda^{k})$ represents an optimal solution. A trial point will be allowed to become the current centre of gravity if the difference between the value of the penalised Lagrangian dual function approximation at the \emph{trial point} $\lambda^k$ and the Lagrangian dual function evaluated at the centre of gravity $\overline{\lambda}^k$, $L(\overline{\lambda}^k)$, is within a fraction of the difference between the Lagrangian dual function evaluated at $\lambda^k$, $L(\lambda^k)$, and $L(\overline{\lambda}^k)$.
 
-More precisely, we know that the following holds in general:
+More precisely, the centre of gravity $\overline{\lambda}^k$ is updated if
 %
 \begin{equation*}
-	\theta - L(\overline{\lambda}^k) \geq L(\lambda^k) -  L(\overline{\lambda}^k),
+	\frac{M^k - L(\overline{\lambda}^k)}{L(\lambda^k) -  L(\overline{\lambda}^k)} \geq m.
 \end{equation*}
 %
-as $\theta \geq L(\lambda^k)$, recalling that if we had all $K$ cuts generated, they would otherwise match. Therefore, if we consider the ratio
-%
-\begin{equation*}
-	\frac{L(\lambda^k) -  L(\overline{\lambda}^k)}{\theta - L(\overline{\lambda}^k)},
-\end{equation*}
-%
-we can have an indication of how precise the approximation currently is since the closer this ratio is to one, the closer the values $\theta^k$ and $L(\lambda^k)$ are. 
-
-The serious step rule consists of checking at each iteration whether the fraction is at least a prespecified value $m$, and if so, the centre of gravity is updated with the current iterate $\lambda^k$. Specifically,
+This ratio can be understood as requiring that the ascent predicted in the current iteration using the penalised Lagrangian dual subproblem, represented by $M^k - L(\overline{\lambda}^k)$ is at least a fraction of the ascent observed when using the actual Lagrangian dual function, given by $L(\lambda^k) - L(\overline{\lambda}^k)$. The serious step rule consists of checking at each iteration whether this ratio is at least a prespecified value $m$, and if so, the centre of gravity is updated with the current iterate $\lambda^k$. Specifically,
 \begin{equation*}
 	\overline{\lambda}^{k+1} = 
 	\begin{cases}
@@ -571,11 +563,11 @@ The serious step rule consists of checking at each iteration whether the fractio
 	\end{cases}
 \end{equation*}
 
-{\bf Remark:} Bundle methods are known for being sensitive to the parametrisation of $\alpha$ and $m$, but are known for having a more robust practical convergence in the context of Lagrangian decomposition. Moreover, the method can be employed in other contexts as well as a means to solve more general (e.g., convex nonlinear) constrained optimisation problems.
+{\bf Remark:} Bundle methods are known for being sensitive to the parametrisation of $\alpha$ and $m$, but are known for having a more robust practical convergence in the context of Lagrangian decomposition. Moreover, the method can be employed in other contexts as well as a means to solve more general (e.g., convex nonlinear but not necessarily smooth) constrained optimisation problems.
 
-\section{Dual decomposition (DD) method}
+\section{Dual decomposition method}
 
-The DD method can be summarised as follows:
+The Lagrangian decomposition method can be summarised as follows:
 
 \begin{enumerate}
 	\item[\bf Step 1:] Initialisation. $LB = \infty$, $k=0$, $\lambda^k = \overline{\lambda}$.
@@ -586,14 +578,14 @@ The DD method can be summarised as follows:
 			\st & Ax_s = b, \ \forall s \in S \\
 			& T_sx_s + W_sy_s = h_s, \ \forall s ín S \\
 			& x_s \in X, \ \forall s \in S \\
-			& y_s \in Y_s, \ \forall s \in S, 
+			& y_s \in Y, \ \forall s \in S, 
 	\end{align*}
 	%
-	obtaining $(x_s^k, y_s^k)_"{s \in S}$. $LB^{k+1} = \max\braces{L(\lambda^k), LB^k}$.
-	\item[\bf Step 3:] If $||(g_s)_s \in S|| < \epsilon$, return $(x_s^k, y_s^k)$ and $LB^{k+1}$. Otherwise, $k=k+1$, update $\lambda^k$ using the chosen method and return to Step 2.	 		
+	obtaining $(x_s^k, y_s^k)_{s \in S}$. Make $LB^{k+1} = \max\braces{L(\lambda^k), LB^k}$.
+	\item[\bf Step 3:] If $||(g_s)_{s \in S}|| < \epsilon$, return $(x_s^k, y_s^k)$ and $LB^{k+1}$. Otherwise, $k=k+1$, update $\lambda^k$ using the chosen method and return to Step 2.	 		
 \end{enumerate}
 
-One point to remark is that, if the evaluation of the Lagrangian dual function requires one to solve MIPs, strong duality may not hold. This means that solving the Lagrangian dual problem is at best a \emph{bounding techinque} that can be combined with branching strategies to find an optimal solution. The combination of a branching strategy specialised for NAC conditions and bounding using Lagrangian decomposition is known as dual decomposition (Carøe and Schultz, 1998)
+One point to remark is that if the evaluation of the Lagrangian dual function requires one to solve MIPs, strong duality may not hold. This means that solving the Lagrangian dual problem is at best a \emph{bounding techinque} that can be combined with branching strategies to find an optimal solution. The combination of a branching strategy specialised for NAC conditions and bounding using Lagrangian decomposition is known as dual decomposition (Carøe and Schultz, 1998)
 %TODO: Cite Brian's paper
 
 
