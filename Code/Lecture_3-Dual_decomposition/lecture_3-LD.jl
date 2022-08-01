@@ -155,7 +155,7 @@ function update_bundle_subproblem(dual_sub, λ_k, α, g_x, CG_λ, DV_CG)
     )
     
     @constraint(dual_sub, θ <= DV_CG + 
-        sum(sum(g_x[:,s] .* (λ[:,s] - λ_k[:,s]) for s = 1:length(S)-1))
+        sum(g_x[i,s] .* (λ[i,s] - λ_k[i,s]) for i in I, s = 1:length(S)-1)
     )
     
     return dual_sub
@@ -176,7 +176,6 @@ function update_lagrangian_multipliers_bundle(dual_sub, λ_k, g_x, CG_λ, DV_CG,
 
     # Serious step test
     if (LB_k - DV_CG) >= m * (M - DV_CG)
-        # serious step
         CG_λ = λ_k 
         DV_CG = LB_k
         print("Serious step.\n")
@@ -290,7 +289,7 @@ function lagrangian_decomposition(ins; max_iter = 200, method=:bundle, heuristic
         # Check for convergence
         if residual <= ϵ
             stop = time()
-            println("\nOptimal found. \n Objective value: $(round(LB, digits=2)) 
+            println("\nOptimal found. \n Objective value: $(round(LB_k, digits=2)) 
                                       \n Total time: $(round(stop-start, digits=2))s 
                                       \n Residual: $(round(residual, digits=4))"
             )
@@ -315,4 +314,4 @@ end
 
 
 x_s, LB = lagrangian_decomposition(instance, max_iter=50, method = :subgradient)
-x_s, LB = lagrangian_decomposition(instance, max_iter=100, method = :bundle)
+x_s, LB = lagrangian_decomposition(instance, max_iter=50, method = :bundle)

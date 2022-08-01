@@ -393,10 +393,10 @@ As we discussed earlier, Lagrangian decomposition is suited for obtaining separa
 	\st   & Ax = b \\
 	& T_s x + W_s y_s = h_s, \ \forall s \in S \\
 	& x \in X \\
-	& y_s \in Y \ \forall s \in S.	
+	& y_s \in Y, \ \forall s \in S.	
 \end{align*}
 
-As we discussed earlier, the complicating structure is associated with the first-stage variables $x$. Thus, in order to expose the complicating structure by means of constraints, we have to perform the following reformulation.
+As we discussed earlier, the complicating structure is associated with the first-stage variables $x$. Thus, in order to expose the complicating structure by means of constraints, we have to perform the following reformulation:
 %
 \begin{align*}
 	\mini &\sum_s p_s(c^\top x_s + q_s^\top y_s) \\	
@@ -409,7 +409,7 @@ As we discussed earlier, the complicating structure is associated with the first
 %
 In effect, this reformulation is based on generating copies of the first-stage variable $x_s$, one for each scenario $s \in S$, that are then connected via the constraint $x_1 = x_2 = \dots = x_{|S|}$. This constraint is known as the \emph{nonanticipativity conditions} (NAC), meaning that it prevents the first-stage decision $x$ from anticipating a specific scenario.
 
-Specifically, nonanticipativity constraints can have several forms. For examples, they can have a
+In practice, nonanticipativity constraints can have several forms. For example, they can have a
 %
 \begin{enumerate}
 	\item symmetric form: $x_s = x_{s+1}$, for $s \in \braces{1,\dots,|S|-1}$.
@@ -421,7 +421,7 @@ Specifically, nonanticipativity constraints can have several forms. For examples
 
 \section{Using Lagrangian relaxation to obtain a decomposition}
  
-One can notice that, once the nonanticipativity conditions are removed, the problem can be decomposed scenario-wise. In what follows, let us assume that we adopt the asymmetric representation of the NAC. Then, employing Lagrangian relaxation to the NAC yield the \emph{Lagrangian function}
+One can notice that, once the nonanticipativity conditions are removed, the problem can be decomposed scenario-wise. In what follows, let us assume that we adopt the asymmetric representation of the NAC. Then, employing Lagrangian relaxation to the NAC yield the \emph{Lagrangian dual function}
 %
 \begin{align*}
 	L(\lambda) = \mini & \sum_s p_s (c^\top x_s + q_s ^\top y_s) + \sum_s \lambda_s^\top g_s \\
@@ -431,7 +431,7 @@ One can notice that, once the nonanticipativity conditions are removed, the prob
  	& y_s \in Y, \ \forall s \in S, 
 \end{align*}
 %
-where $g_s = x_{\overline{s}} - x_s$, $\forall s \in S \setminus \{\overline{s}\}$ and $\overline{s}$ is a reference scenario. Notice that the Lagrangian function is completely separable scenario-wise. To see that, we can redefine it as
+where $g_s = x_{\overline{s}} - x_s$, $\forall s \in S \setminus \{\overline{s}\}$ and $\overline{s}$ is a reference scenario. Notice that the Lagrangian dual function is completely separable scenario-wise. To see that, we can redefine it as
 %
 \begin{equation*}
 	L(\lambda) = \sum_s L_s(\lambda),	
@@ -456,7 +456,7 @@ with $f_s(\lambda)$ simply being
 	\end{cases}
 \end{equation*}
 
-Notice that \emph{evaluating} the Lagrangian function requires solving the 2SSP, given an argument $\lambda = (\lambda_s)_{s \in S}$. These multipliers $\lambda$ are the so-called \emph{Lagrangian multipliers}.
+Notice that \emph{evaluating} the Lagrangian dual function requires solving the 2SSP, given an argument $\lambda = (\lambda_s)_{s \in S}$. These multipliers $\lambda$ are the so-called \emph{Lagrangian dual multipliers}.
 
 The theoretical framework under which this idea is developed is known as \emph{Lagrangian duality}, to which linear programming duality is a special case. The key result of our interest in this context is known as \emph{weak duality}, which states the following. Let $z^*$ be the optimal objective value of the 2SSP. Then, we have that, for any $\lambda$,
 %
@@ -473,30 +473,30 @@ Lagrangian duality-based methods typically employ optimisation to find the best 
 Under convexity and a constraint qualification condition\footnote{Conditions that once satisfied by a constraint set allow for creating a link between Karush-Kuhn-Tucker conditions and optimality of a feasible point.}, it can be shown that
 %
 \begin{equation*}
-	\max_\lambda L(\lambda) = z^*.
+	\maxi_\lambda L(\lambda) = z^*.
 \end{equation*}
 
 The strongest selling point of Lagrangian decomposition methods is that, for each $\lambda$, evaluating the Lagrangian dual function can be done in parallel, with very little structure to be shared. This means that there is no central main problem that increases as iterations progress and that the largest problem solved is as large as a single scenario problem.
 
 \section{Solving the Lagrangian dual}
 
-The Lagrangian dual problem is, in essence, a non-differentiable bi-level problem and, thus, requires specific solution techniques. For linear 2SSP models following our representation, the Lagrangian dual problem is a piecewise linear concave function. This means that a nonsmooth optimisation method must be employed to solve it.
+The Lagrangian dual problem is, in essence, a non-differentiable problem and, thus, requires specific solution techniques. For linear 2SSP models following our representation, the Lagrangian dual problem is a piecewise linear concave function\footnote{For a proof, check out \href{https://gamma-opt.github.io/optimisation-notes/pdfs/optimisation-notes.pdf}{\color{blue} Chapter 19, Theorem 19.8 of the Optimisation notes}.}. This means that a nonsmooth optimisation method must be employed to solve it.
 
 \subsection{The subgradient method}
 
-The subgradient method is based on the idea of successively taking ascending subgradient steps in the space of the Lagrangian dual variables. The subgradient is a generalisation of the gradient for non-differentiable functions. In our particular case, $g_s$, $\forall s \in S$, is a subgradient for $L_s(\lambda)$. As we would like to maximise $L(\lambda)$, we can take steps of the form
+The subgradient method is based on the idea of successively taking ascending subgradient steps in the space of the Lagrangian dual variables. The subgradient is a generalisation of the gradient for non-differentiable functions. In our particular case, $g_s$, $\forall s \in S$, is a subgradient for $L_s(\lambda)$\footnote{For a proof, check out \href{https://gamma-opt.github.io/optimisation-notes/pdfs/optimisation-notes.pdf}{\color{blue} Chapter 19, Theorem 19.9 of the Optimisation notes}.}. As we would like to maximise $L(\lambda)$, we can take steps of the form
 %
 \begin{equation*}
 	\lambda_s^{k+1} = \lambda_s^{k} + \mu^k g^k_s, \ \forall s \in S,
 \end{equation*}
 %
-where $k$ is an iteration counter and $\mu^k_s$ is a step size. There are multiple alternative ways to define the step-size term, many of them drawing from techniques used in variants of the gradient/ steepest descent method. One common update rule is that known as the \emph{Polyak} rule, which is given by
+where $k$ is an iteration counter and $\mu^k_s$ is a step size. There are multiple alternative ways to define the step-size term, many of them drawing from techniques used in variants of the gradient/steepest descent method. One common update rule is that known as the \emph{Polyak} rule, which is given by
 %
 \begin{equation*}
 	\mu^k = \alpha_k \frac{\overline{z} - L(\lambda^k)}{||(g_s)_{s \in S}||_2^2},	
 \end{equation*}
 %
-where $\alpha^k \in (0, 2]$ and is such that $\alpha_k \rightarrow 0$ as $k \rightarrow \infty$ and $\sum_k \alpha_k \rightarrow \infty$ as $k \rightarrow \infty$; $\overline{z}$ is an upper bound on the optimal solution of the 2SSP $z^*$ and $L(\lambda^k)$ is the value of the Lagrangian dual function, evaluated at iteration $k$. 
+where $\alpha^k \in (0, 2]$ and is such that $\alpha_k \rightarrow 0$ and $\sum_k \alpha_k \rightarrow \infty$ as $k \rightarrow \infty$; $\overline{z}$ is an upper bound on the optimal solution of the 2SSP $z^*$ and $L(\lambda^k)$ is the value of the Lagrangian dual function, evaluated at iteration $k$. 
 
 
 \subsection{Cutting-planes}
@@ -527,7 +527,7 @@ Since $K$ is most likely a large number and enumerating all vertices is not prac
 
 \subsection{Bundle method}
 
-One drawback of the cutting-plane method is the fact that in the early iterations, we rely on a poor approximation of the Lagrangian function, which in turn may lead to poor Lagrangian dual multipliers. This vicious cycle tends to last for a while in practice and may compromise the performance of the method.
+One drawback of the cutting-plane method is the fact that in the early iterations, we rely on a poor approximation of the Lagrangian dual function, which in turn may lead to poor Lagrangian dual multipliers. This vicious cycle tends to last for a while in practice and may compromise the performance of the method.
 
 To alleviate this, the bundle method employs two complementary mechanisms. The first consists of penalising solutions that stray too far from a reference solution $\overline{\lambda}$, known as the \emph{centre of gravity}. This acts as a soft trust region and can mitigate the ``bouncing effect'' of the Lagrangian dual multipliers, a feature that is characteristic of cutting plane methods in their early iterations.
 
@@ -546,37 +546,37 @@ where $\overline{\lambda}^k$ represents the centre of gravity at iteration $k$ a
 	\theta \leq \sum_s \left[p_s (c^\top x_s^l + q_s^\top y_s^l)+  \lambda_s^\top g_s^l \right], \ l = 1, \dots, k
 \end{equation*}
 %
-and for which $(\theta^{k}, \lambda^{k})$ represents an optimal solution. A trial point will be allowed to become the current centre of gravity if the difference between the value of the penalised Lagrangian dual function approximation at the \emph{trial point} $\lambda^k$ and the Lagrangian dual function evaluated at the centre of gravity $\overline{\lambda}^k$, $L(\overline{\lambda}^k)$, is within a fraction of the difference between the Lagrangian dual function evaluated at $\lambda^k$, $L(\lambda^k)$, and $L(\overline{\lambda}^k)$.
+and for which $(\theta^{k}, \lambda^{k})$ represents an optimal solution. A trial point will be allowed to become the current centre of gravity if the difference between the value of the penalised Lagrangian dual function approximation at the \emph{trial point} $\lambda^k$ and the Lagrangian dual function evaluated at the centre of gravity $\overline{\lambda}^k$, $L(\overline{\lambda}^k)$, is comparable with the difference between the Lagrangian dual function evaluated at $\lambda^k$, $L(\lambda^k)$, and $L(\overline{\lambda}^k)$, given a factor of $m$.
 
 More precisely, the centre of gravity $\overline{\lambda}^k$ is updated if
 %
 \begin{equation*}
-	\frac{M^k - L(\overline{\lambda}^k)}{L(\lambda^k) -  L(\overline{\lambda}^k)} \geq m.
+	\frac{L(\lambda^k) -  L(\overline{\lambda}^k)}{M^k - L(\overline{\lambda}^k)} \geq m.
 \end{equation*}
 %
-This ratio can be understood as requiring that the ascent predicted in the current iteration using the penalised Lagrangian dual subproblem, represented by $M^k - L(\overline{\lambda}^k)$ is at least a fraction of the ascent observed when using the actual Lagrangian dual function, given by $L(\lambda^k) - L(\overline{\lambda}^k)$. The serious step rule consists of checking at each iteration whether this ratio is at least a prespecified value $m$, and if so, the centre of gravity is updated with the current iterate $\lambda^k$. Specifically,
+This ratio can be understood as requiring that the ascent observed using the Lagrangian dual function, given by $L(\lambda^k) - L(\overline{\lambda}^k)$ is well enough approximated by the ascent predicted in the current iteration using the penalised Lagrangian dual subproblem, represented by $M^k - L(\overline{\lambda}^k)$. The serious step rule consists of checking at each iteration whether this ratio is at least a prespecified value $m$, and if so, the centre of gravity is updated with the current iterate $\lambda^k$. Specifically,
 \begin{equation*}
 	\overline{\lambda}^{k+1} = 
 	\begin{cases}
-		\lambda^{k+1}, &\text{ if } \frac{L(\lambda^k) -  L(\overline{\lambda}^k)}{\theta - L(\overline{\lambda}^k)} \geq m \\
+		\lambda^{k+1}, &\text{ if } L(\lambda^k) -  L(\overline{\lambda}^k) \geq m({M^k - L(\overline{\lambda}^k)}) \\
 		\overline{\lambda}^{k}, &\text{ otherwise. }
 	\end{cases}
 \end{equation*}
 
-{\bf Remark:} Bundle methods are known for being sensitive to the parametrisation of $\alpha$ and $m$, but are known for having a more robust practical convergence in the context of Lagrangian decomposition. Moreover, the method can be employed in other contexts as well as a means to solve more general (e.g., convex nonlinear but not necessarily smooth) constrained optimisation problems.
+{\bf Remark:} Bundle methods are known for being sensitive to the parametrisation of $\alpha$ and $m$, but are also known for having a more robust practical convergence in the context of Lagrangian decomposition. Moreover, the method can be employed in other contexts as well as a means to solve more general (e.g., convex nonlinear but not necessarily smooth) constrained optimisation problems.
 
 \section{Dual decomposition method}
 
 The Lagrangian decomposition method can be summarised as follows:
 
 \begin{enumerate}
-	\item[\bf Step 1:] Initialisation. $LB = \infty$, $k=0$, $\lambda^k = \overline{\lambda}$.
+	\item[\bf Step 1:] Initialisation. $LB = -\infty$, $k=0$, $\lambda^k = \overline{\lambda}$.
 	\item[\bf Step 2:] Evaluate the Lagrangian dual function 
 	%
 	\begin{align*}
 		L(\lambda^k) = \mini & \sum_s p_s (c^\top x_s + q_s ^\top y_s) + \sum_s \lambda^k_s g_s \\
 			\st & Ax_s = b, \ \forall s \in S \\
-			& T_sx_s + W_sy_s = h_s, \ \forall s ín S \\
+			& T_sx_s + W_sy_s = h_s, \ \forall s \in S \\
 			& x_s \in X, \ \forall s \in S \\
 			& y_s \in Y, \ \forall s \in S, 
 	\end{align*}

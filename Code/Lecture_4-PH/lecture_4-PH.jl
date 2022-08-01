@@ -1,8 +1,6 @@
 
 include("$(pwd())/instance_generation.jl")
 
-using Base.Threads
-
 TotalFacilities = 5
 TotalClients = 10
 TotalScenarios = 30
