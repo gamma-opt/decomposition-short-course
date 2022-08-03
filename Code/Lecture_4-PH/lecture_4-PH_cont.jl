@@ -3,7 +3,7 @@ include("$(pwd())/instance_generation.jl")
 
 TotalFacilities = 5
 TotalClients = 10
-TotalScenarios = 30
+TotalScenarios = 50
 
 instance = generate_instance(TotalFacilities, TotalClients, TotalScenarios)
 
@@ -104,58 +104,58 @@ end
 
 
 function progressive_hedging(ins; max_iter = 200)
+    
+    I = ins.I 
+    S = ins.S
+    P = ins.P
+
     k = 1
     ϵ = 0.001
-    μ = zeros(length(ins.I), length(ins.S))
-    y_s = zeros(length(ins.I), length(ins.S))
-    z2 = zeros(length(ins.I))
-    LB = 0.0
-    LB_s = 0.0 
+    μ = zeros(length(I), length(S))
+    y_s = zeros(length(I), length(S))
+    z2 = zeros(length(I))
     residual = Inf
-    ρ = 0.5
-    
+    residual_s = zeros(length(S))
+    LB_aug_s = zeros(length(S))
+    LB_aug = -Inf
+    ρ = 0.25
+
     start = time()    
 
     while k <= max_iter && residual > ϵ
         
-        for s in ins.S
-            y_s[:,s], ⋅ = generate_and_solve_subproblem(ins, s, μ, z2, ρ)
-        end
-    
-        # Calculate residual
-        tol = zeros(TotalScenarios)
-        
-        # TODO: Complete the computation of the residual for each s.
-        for s in ins.S
-            tol[s] = ins.P[s] * ρ * norm(y_s[:,s] - z2)
+        for s in S
+            y_s[:,s], LB_aug_s[s] = generate_and_solve_subproblem(ins, s, μ, z2, ρ)
+            residual_s[s] = P[s] * norm(y_s[:,s] - z2)^2 
         end
         
-        # Total residual = sum of subproblem residuals
-        residual = sum(tol[s] for s in ins.S)
+        LB_aug = sum(P[s] * LB_aug_s[s] for s in S)
+        residual = sum(residual_s[s] for s in S)
         
         if residual <= ϵ
             stop = time()
             println("Algorithm converged.")
-            println("\nOptimal found: \n Total time: $(round(stop-start, digits=2))s 
-                                      \n Residual: $(round(residual, digits=4))"
-            )
-            return y_s
+            println("\nOptimal found: \n Objective value: $(round(LB_aug, digits=2)) \n Total time: $(round(stop-start, digits=2))s \n Residual: $(round(residual, digits=4))\n")
+            return z2
         else    
 
-            z2 = y_s * ins.P
+            # z-update
+            z2 = sum(P[s] * y_s[:,s] for s in S)
 
-            for s in ins.S
+            # dual update
+            for s in S
                 μ[:,s] = μ[:,s] + ρ.*(y_s[:,s] - z2)
             end
             
-            println("Iter $(k): residual: $(round(residual, digits = 4))")
+            if k % 5 ==0 
+                println("Iter $(k): residual: $(round(residual, digits = 4))") 
+            end    
 
-            k += 1
+            k = k + 1
         end
     end
     println("Maximum number of iterations exceeded.")
-    return y_s
+    return z2
 end
 
-y_s = progressive_hedging(instance, max_iter = 10000)
-@show sum(instance.P[s].* y_s[:,s] for s in instance.S)
+z = progressive_hedging(instance, max_iter = 1000)

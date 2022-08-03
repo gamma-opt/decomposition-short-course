@@ -74,65 +74,63 @@ end
 
 
 function progressive_hedging(ins; max_iter = 200)
+    
+    I = ins.I 
+    S = ins.S
+    P = ins.P
+    
     k = 1
-    ϵ = 0.01
-    λ = zeros(length(ins.I), length(ins.S))
-    μ = zeros(length(ins.I), length(ins.S))
-    x_s = zeros(length(ins.I), length(ins.S))
-    y_s = zeros(length(ins.I), length(ins.S))
-    z1 = zeros(length(ins.I))
-    z2 = zeros(length(ins.I))
-    LB = 0.0
-    LB_s = 0.0 
+    ϵ = 0.001
+    λ = zeros(length(I), length(S))
+    μ = zeros(length(I), length(S))
+    x_s = zeros(length(I), length(S))
+    y_s = zeros(length(I), length(S))
+    z1 = zeros(length(I))
+    z2 = zeros(length(I))
     residual = Inf
-    ρ = 0.5
+    residual_s = zeros(length(S))
+    LB_aug_s = zeros(length(S))
+    LB_aug = -Inf
+    ρ = 2.5
     
     start = time()    
 
     while k <= max_iter && residual > ϵ
         
         for s in ins.S
-            x_s[:,s], y_s[:,s] = generate_and_solve_subproblem(ins, s, λ, μ, z1, z2, ρ)
-        end
-    
-        # Calculate residual
-        residual = sqrt(sum(ins.P[s]*(x_s[i,s] - z1[i])^2 for i in ins.I, s in ins.S) + 
-            sum(ins.P[s]*(y_s[i,s] - z2[i])^2 for i in ins.I, s in ins.S))  
+            x_s[:,s], y_s[:,s], LB_aug_s[s] = generate_and_solve_subproblem(ins, s, λ, μ, z1, z2, ρ)
+            residual_s[s] = P[s] * (norm(x_s[:,s] - z1)^2 + norm(y_s[:,s] - z2)^2)
+        end 
         
+        LB_aug = sum(P[s] * LB_aug_s[s] for s in S)
+        residual = sum(residual_s[s] for s in S)
+
         if residual <= ϵ
             stop = time()
-            println("Algorithm converged. Calculating bound...\n")
-            #Calculate bound 
-            for s in ins.S
-                x_s[:,s], y_s[:,s], LB_s = generate_and_solve_subproblem(ins, s, λ, μ, z1, z2, 0.0)
-                LB = LB + ins.P[s] * LB_s
-            end
-                
-            println("\nOptimal found: \n Objective value: $(round(LB, digits=2)) 
-                                      \n Total time: $(round(stop-start, digits=2))s 
-                                      \n Residual: $(round(residual, digits=4))"
-            )
-            return x_s, y_s
+            println("Algorithm converged.")                
+            println("\nOptimal found: \n Objective value: $(round(LB_aug, digits=2)) \n Total time: $(round(stop-start, digits=2))s \n Residual: $(round(residual, digits=4))\n")
+            return z1, z2
         else    
+            
+            # z-update
+            z1 = sum(P[s] * x_s[:,s] for s in S)
+            z2 = sum(P[s] * y_s[:,s] for s in S)
 
-            z1 = sum(ins.P[s] * x_s[:,s] for s in ins.S)
-            z2 = sum(ins.P[s] * y_s[:,s] for s in ins.S)
-
-            for s in ins.S
+            # dual update    
+            for s in S
                 λ[:,s] = λ[:,s] + ρ.*(x_s[:,s] - z1)
                 μ[:,s] = μ[:,s] + ρ.*(y_s[:,s] - z2)
             end
             
-            println("Iter $(k): residual: $(round(residual, digits = 4))")
+            if k % 5 ==0 
+                println("Iter $(k): residual: $(round(residual, digits = 4))") 
+            end 
 
-            k += 1
+            k = k + 1
         end
     end
     println("Maximum number of iterations exceeded.")
-    return x_s, y_s
+    return z1, z2
 end
 
-x_s, y_s = progressive_hedging(instance, max_iter = 300)
-
-sum(instance.P[s].* x_s[:,s] for s in instance.S)
-sum(instance.P[s].* y_s[:,s] for s in instance.S)
+x_s, y_s = progressive_hedging(instance, max_iter = 500)

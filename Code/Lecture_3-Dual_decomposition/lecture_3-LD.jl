@@ -96,14 +96,13 @@ function generate_and_solve_lagrangian_subproblem(instance, λ)
             sum(T[i,j] * w[i,j,s] for i in I, j in J) + 
             sum(U * z[j,s] for j in J)) 
             for s in S) +
-        sum(λ[i,s] * (x[i,s] - x[i,s+1]) for i in I, s in 1:length(S)-1)
+        sum(λ[i,s] * (x[i,s] - x[i,s+1]) for i in I, s in 1:length(S)-1) # Lag. term
     )
 
     optimize!(lag_sub)
 
     return value.(lag_sub[:x]), objective_value(lag_sub)
 end
-#%
 
 
 function update_lagrangian_multipliers_subgradient(λ, g_x, UB, LB, k, ϵ)
@@ -117,7 +116,7 @@ function update_lagrangian_multipliers_subgradient(λ, g_x, UB, LB, k, ϵ)
     if sum(g_x[i,s]^2 for i in I, s in 1:length(S)-1) > ϵ 
         η = α*(UB - LB) / sum(g_x[i,s]^2 for i in I, s in 1:length(S)-1)
     else
-        0.0
+        η = 0.0
     end
 
     λ = λ + η .* g_x 
@@ -141,7 +140,7 @@ function generate_bundle_subproblem(ins)
 end
 
 
-function update_bundle_subproblem(dual_sub, λ_k, α, g_x, CG_λ, DV_CG)
+function update_bundle_subproblem(dual_sub, λ_k, α, g_x, CG_λ, LB_k)
     
     TotalFacilities, TotalScenarios = size(g_x)
     I = 1:TotalFacilities
@@ -154,8 +153,8 @@ function update_bundle_subproblem(dual_sub, λ_k, α, g_x, CG_λ, DV_CG)
         α * sum((λ[i,s] - CG_λ[i,s])^2 for i in I, s in 1:length(S)-1)
     )
     
-    @constraint(dual_sub, θ <= DV_CG + 
-        sum(g_x[i,s] .* (λ[i,s] - λ_k[i,s]) for i in I, s = 1:length(S)-1)
+    @constraint(dual_sub, θ <= LB_k +
+        sum(g_x[i,s] * (λ[i,s] - λ_k[i,s]) for i in I, s = 1:length(S)-1)
     )
     
     return dual_sub
@@ -164,10 +163,11 @@ end
 
 function update_lagrangian_multipliers_bundle(dual_sub, λ_k, g_x, CG_λ, DV_CG, LB_k)
 
-    m = 0.5
+    # Bundle method parametrisation
+    m = 0.125
     α = 10.0
 
-    dual_sub = update_bundle_subproblem(dual_sub, λ_k, α, g_x, CG_λ, DV_CG)
+    dual_sub = update_bundle_subproblem(dual_sub, λ_k, α, g_x, CG_λ, LB_k)
 
     optimize!(dual_sub)
 
@@ -260,9 +260,6 @@ function lagrangian_decomposition(ins; max_iter = 200, method=:bundle, heuristic
 
     # Bundle method related parameters 
     CG_λ = λ_k   # centre of gravity
-   
-    # Parameters values for the parameters of the Bundle method
-
     dual_sub = generate_bundle_subproblem(ins)
 
     start = time()    
@@ -302,7 +299,7 @@ function lagrangian_decomposition(ins; max_iter = 200, method=:bundle, heuristic
         elseif method == :subgradient
             λ_k = update_lagrangian_multipliers_subgradient(λ_k, g_x, UB, LB_k, k, ϵ)
         else
-            error("Unknown dual upate method")
+            error("Unknown dual update method")
         end
 
         println("Iter $(k): UB: $(round(UB, digits=2)), LB: $(round(LB_k, digits=2)), residual: $(round(residual, digits = 4))")        
@@ -313,5 +310,7 @@ function lagrangian_decomposition(ins; max_iter = 200, method=:bundle, heuristic
 end
 
 
-x_s, LB = lagrangian_decomposition(instance, max_iter=50, method = :subgradient)
+x_s, LB = lagrangian_decomposition(instance, max_iter=5, method = :subgradient)
 x_s, LB = lagrangian_decomposition(instance, max_iter=50, method = :bundle)
+
+display(x_s)

@@ -746,13 +746,14 @@ Being PH (or ADMM, for that matter) a Lagrangian dual-based approach, we must st
 We are finally ready to present the method.
 
 \begin{enumerate}
-	\item[\bf Step 1:] Initialisation: $LB= \infty$, $k=0$, $\lambda^k = \overline{\lambda}$. Evaluate $L^\rho(\lambda^k)$ to obtain $(x^k, y^k)$.  \linebreak Make $z^k = \sum_s p_s x^k_s$.
-	\item[\bf Step 2:] if $\sqrt{\sum_s p_s ||x_s^k - z^k||_2^2} < \epsilon$, then return $z^k = \sum_s p_s x_s^k$ and $LB = L^\rho(\lambda^k)$.
-	\item[\bf Step 3:] Make $z^k = \sum_s p_s x_s^k$ and update the dual multipliers
+	\item[\bf Step 1:] Initialisation: $LB= -\infty$, $k=0$, $\lambda^k = \overline{\lambda}$. 
+	\item[\bf Step 2:] Evaluate $L^\rho(\lambda^k)$ to obtain $(x^k, y^k)$.
+	\item[\bf Step 3:] if $\sqrt{\sum_s p_s ||x_s^k - z^k||_2^2} < \epsilon$, then return $z^k = \sum_s p_s x_s^k$ and $LB = L^\rho(\lambda^k)$.
+	\item[\bf Step 4:] Make $z^k = \sum_s p_s x_s^k$ and update the dual multipliers
 	\begin{equation*}
 		\lambda_s^{k+1} = \lambda_k + \rho(x_s^k - z^k).	
 	\end{equation*}
-	k = k+1 and return to Step 2.
+	Make $k = k+1$ and return to Step 2.
 \end{enumerate}
 
 Some final remarks:
